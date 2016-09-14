@@ -20,29 +20,67 @@ int main(int argc, char* argv[])
 		printf("Usage: %s <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L2_SIZE> <L2_ASSOC> <REPL_POLICY> <INCLUSION> <TRACE_FILE>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
+	NUM_LEVEL = 2;
+
+	uint32_t *size, *assoc, *repl_policy, *inclusion;
+	size = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
+	if (size == NULL)
+		error_exit("malloc")
+	assoc = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
+	if (assoc == NULL)
+		error_exit("malloc")
+	repl_policy = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
+	if (repl_policy == NULL)
+		error_exit("malloc")
+	inclusion = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
+	if (inclusion == NULL)
+		error_exit("malloc")
+
 	BLOCKSIZE = atoi(argv[1]);
-	SIZE[L1] = atoi(argv[2]);
-	ASSOC[L1] = atoi(argv[3]);
-	SIZE[L2] = atoi(argv[4]);
-	ASSOC[L2] = atoi(argv[5]);
-	REPL_POLICY = atoi(argv[6]);
-	INCLUSION = atoi(argv[7]);
+	size[L1] = atoi(argv[2]);
+	assoc[L1] = atoi(argv[3]);
+	size[L2] = atoi(argv[4]);
+	assoc[L2] = atoi(argv[5]);
+	repl_policy[L2] = repl_policy[L1] = atoi(argv[6]);
+	inclusion[L2] = inclusion[L1] = atoi(argv[7]);
 	TRACE_FILE = argv[8];
 
-	Cache_Initial();
+	int i;
+	for (i = 0; i < NUM_LEVEL; i++)
+	{
 
-	if (REPL_POLICY == OPTIMIZATION)
-		OPTIMIZATION_TRACE_Initial();
+		if (repl_policy[i] == OPTIMIZATION)
+		{
+			OPTIMIZATION_TRACE_Initial();
+			break;
+		}
+	}
 
+	Cache_Initial(size, assoc, repl_policy, inclusion);
+
+	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
+	if (trace_file_fp == NULL)
+		error_exit("fopen")
 	while (1)
 	{
-		char OP;
-		uint32_t ADDR;
-		scanf("%c %x", &OP, &ADDR);
-		uint32_t tag[2], index[2], way_num[2];
-		if (OP == READ)
-			Read(ADDR, tag, index, way_num);
-		else
-			Write(L1, ADDR, tag, index, way_num);
+		int result;
+		uint8_t OP;
+		uint64_t ADDR;
+		result = fscanf(trace_file_fp, "%c %x", &OP, &ADDR);
+		if (result == EOF)
+			break;
+		switch (OP)
+		{
+		case READ:
+			Read(L1, ADDR, 0);
+			break;
+		case WRITE:
+			Write(L1, ADDR);
+			break;
+		default:
+			input_error_exit("error: wrong operation type. Legal operations are read 'r' and write 'w'.\n")
+			break;
+		}
 	}
+	fclose(trace_file_fp);
 }

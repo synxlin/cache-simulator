@@ -82,7 +82,9 @@ extern char* TRACE_FILE;
 extern uint64_t trace_count;
 extern uint64_t *OPTIMIZATION_TRACE;
 
-void Cache_Initial();
+void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint32_t *inclusion);
+
+void OPTIMIZATION_TRACE_Initial();
 
 void Interpret_Address(uint32_t level, uint64_t ADDR, uint64_t *tag, uint64_t *index);
 
@@ -90,7 +92,7 @@ uint64_t Rebuild_Address(uint8_t level, uint64_t tag, uint64_t index);
 
 uint8_t Cache_Search(uint8_t level, uint64_t tag, uint64_t index, uint32_t *way_num);
 
-void Rank_Maintain(uint8_t level, uint64_t *rank, uint32_t way_num, uint64_t value, uint8_t result);
+void Rank_Maintain(uint8_t level, uint64_t index, uint32_t way_num, uint8_t result);
 
 uint32_t Rank_Top(uint8_t level, const uint64_t *rank);
 
@@ -98,7 +100,10 @@ uint32_t Cache_Replacement(uint8_t level, uint64_t index, uint64_t tag);
 
 void Write_Back(uint8_t level, uint64_t ADDR);
 
-uint8_t Read(uint64_t ADDR, uint64_t *tag, uint64_t *index, uint32_t *way_num);
+void Invalidation(uint8_t level, uint64_t ADDR);
 
-void Write(uint8_t level, uint64_t ADDR, uint64_t *tag, uint64_t *index, uint32_t *way_num);
+uint32_t Read(uint8_t level, uint64_t ADDR, uint32_t access_count);
+
+void Write(uint8_t level, uint64_t ADDR);
+
 #endif

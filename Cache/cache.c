@@ -9,6 +9,8 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint3
 {
 	int j;
 	CACHE = (cache *)malloc(sizeof(cache)*NUM_LEVEL);
+	if (CACHE == NULL)
+		error_exit("malloc")
 	BLOCK_OFFSET_WIDTH = log_2(BLOCKSIZE);
 	for (j = 0; j < NUM_LEVEL; j++)
 	{
@@ -24,14 +26,75 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint3
 		CACHE[j].TAG_WIDTH = 32 - CACHE[j].INDEX_WIDTH - BLOCK_OFFSET_WIDTH;
 
 		CACHE[j].CACHE_IC = (set *)malloc(sizeof(set) * CACHE[j].SET_NUM);
-
+		if (CACHE[j].CACHE_IC == NULL)
+			error_exit("malloc")
 		uint32_t i;
 		for (i = 0; i < CACHE[j].SET_NUM; i++)
 		{
 			CACHE[j].CACHE_IC[i].BLOCK = (block *)malloc(sizeof(block) * CACHE[j].ASSOC);
+			if (CACHE[j].CACHE_IC[i].BLOCK == NULL)
+				error_exit("malloc")
 			CACHE[j].CACHE_IC[i].RANK = (uint64_t *)malloc(sizeof(uint64_t) * CACHE[j].ASSOC);
+			if (CACHE[j].CACHE_IC[i].RANK == NULL)
+				error_exit("malloc")
 		}
 	}
+}
+
+void OPTIMIZATION_TRACE_Initial()
+{
+	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
+	if (trace_file_fp == NULL)
+		error_exit("fopen()")
+	uint64_t trace_len = 1000, i = 0;
+	uint64_t *trace = (uint64_t *)malloc(sizeof(uint64_t) * trace_len);
+	if (trace == NULL)
+		error_exit("malloc")
+	while (1)
+	{
+		int result;
+		uint8_t OP;
+		uint64_t ADDR;
+		result = fscanf(trace_file_fp, "%c %x", &OP, &ADDR);
+		if (result == EOF)
+			break;
+		if (i > trace_len)
+		{
+			trace_len *= 2;
+			trace = (uint32_t *)realloc(OPTIMIZATION_TRACE, trace_len);
+			if (trace == NULL)
+				error_exit("realloc")
+		}
+		trace[i] = ADDR;
+		i++;
+	}
+	fclose(trace_file_fp);
+
+	OPTIMIZATION_TRACE = (uint64_t *)malloc(sizeof(uint64_t) * i);
+	if (OPTIMIZATION_TRACE == NULL)
+		error_exit("malloc")
+
+	_rb_tree_ptr T = (_rb_tree_ptr)malloc(sizeof(struct _rb_tree));
+	if (T == NULL)
+		error_exit("malloc")
+	T->_root = NULL;
+	uint64_t j;
+	for (j = i - 1; j >= 0; j--)
+	{
+		_rb_tree_node_ptr _result = _rb_tree_find(T, trace[j]);
+		if (_result == NULL)
+		{
+			_rb_tree_insert(T, trace[j], j);
+			OPTIMIZATION_TRACE[j] = i + 1;
+		}
+		else
+		{
+			OPTIMIZATION_TRACE[j] = _result->value - j;
+			_result->value = j;
+		}
+	}
+	free(trace);
+	_rb_tree_clear(T);
 }
 
 void Interpret_Address(uint32_t level, uint64_t ADDR, uint64_t *tag, uint64_t *index)
@@ -65,54 +128,6 @@ uint8_t Cache_Search(uint8_t level, uint64_t tag, uint64_t index, uint32_t *way_
 		*way_num = k;
 		return HIT;
 	}
-}
-
-void OPTIMIZATION_TRACE_Initial()
-{
-	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
-	if (trace_file_fp == NULL)
-		error_exit("fopen()")
-	uint64_t trace_len = 1000, i = 0;
-	uint64_t *trace = (uint64_t *)malloc(sizeof(uint64_t) * trace_len);
-	while (1)
-	{
-		int result;
-		uint8_t OP;
-		uint64_t ADDR;
-		result = fscanf(trace_file_fp, "%c %x", &OP, &ADDR);
-		if (result == EOF)
-			break;
-		if (i > trace_len)
-		{
-			trace_len *= 2;
-			trace = (uint32_t *)realloc(OPTIMIZATION_TRACE, trace_len);
-		}
-		trace[i] = ADDR;
-		i++;
-	}
-	fclose(trace_file_fp);
-
-	OPTIMIZATION_TRACE = (uint64_t *)malloc(sizeof(uint64_t) * i);
-
-	_rb_tree_ptr T = (_rb_tree_ptr)malloc(sizeof(struct _rb_tree));
-	T->_root = NULL;
-	uint64_t j;
-	for (j = i - 1; j >= 0; j--)
-	{
-		_rb_tree_node_ptr _result = _rb_tree_find(T, trace[j]);
-		if (_result == NULL)
-		{
-			_rb_tree_insert(T, trace[j], j);
-			OPTIMIZATION_TRACE[j] = i + 1;
-		}
-		else
-		{
-			OPTIMIZATION_TRACE[j] = _result->value - j;
-			_result->value = j;
-		}
-	}
-	free(trace);
-	_rb_tree_clear(T);
 }
 
 void Rank_Maintain(uint8_t level, uint64_t index, uint32_t way_num, uint8_t result)
@@ -271,127 +286,70 @@ void Invalidation(uint8_t level, uint64_t ADDR)
 	}
 }
 
-uint8_t Read(uint64_t ADDR)
+uint32_t Read(uint8_t level, uint64_t ADDR, uint32_t access_count)
 {
-	uint64_t *tag = (uint64_t *)malloc(sizeof(uint64_t)*NUM_LEVEL);
-	uint64_t *index = (uint64_t *)malloc(sizeof(uint64_t)*NUM_LEVEL);
-	uint32_t *way_num = (uint32_t *)malloc(sizeof(uint32_t)*NUM_LEVEL);
-	Interpret_Address(L1, ADDR, &tag[L1], &index[L1]);
-	uint8_t result = Cache_Search(L1, tag[L1], index[L1], &way_num[L1]);
+	if (level >= NUM_LEVEL)
+	{
+#ifdef DBG
+		printf("read %x : Main Memory HIT\n", ADDR);
+#endif // DBG
+		return 0;
+	}
+	uint64_t tag, index;
+	uint32_t way_num;
+	Interpret_Address(level, ADDR, &tag, &index);
+	uint8_t result = Cache_Search(level, tag, index, &way_num);
 	if (result == HIT)
 	{
 #ifdef DBG
-		printf("read %x : L1 HIT\n", ADDR);
-#endif // DEBUG
-		Rank_Maintain(L1, index[L1], way_num[L1], HIT);
-		return HIT;
+		printf("read %x : L%d HIT\n", ADDR, level+1);
+#endif // DBG
+		if (level > L1 && CACHE[level - 1].INCLUSION == EXCLUSIVE)
+			CACHE[level].CACHE_IC[index].BLOCK[way_num].VALID_BIT = INVALID;
+		Rank_Maintain(level, index, way_num, HIT);
+		return way_num;
 	}
 	else
 	{
-		uint32_t level = L2;
-		while (level < NUM_LEVEL)
-		{
-			Interpret_Address(level, ADDR, &tag[level], &index[level]);
-			result = Cache_Search(level, tag[level], index[level], &way_num[level]);
-			if (result == HIT)
-			{
 #ifdef DBG
-				printf("read %x : L1 MISS L2 HIT\n", ADDR);
+		printf("read %x : L%d MISS\n", ADDR, level + 1);
 #endif // DBG
-				switch (INCLUSION)
-				{
-				case NON_INCLUSIVE:
-				case INCLUSIVE:
-				{
-					uint32_t pre_level = level - 1;
-					while (pre_level >= L1)
-					{
-						way_num[pre_level] = Cache_Replacement(pre_level, index[pre_level], tag[pre_level]);
-						Rank_Maintain(pre_level, index[pre_level], way_num[pre_level], MISS);
-					}
-					Rank_Maintain(level, index[level], way_num[level], HIT);
-					return MISS;
-				}
-				case EXCLUSIVE:
-					CACHE[L2][index[L2]].BLOCK[way_num[L2]].VALID_BIT = INVALID;
-					way_num[L1] = Cache_Replacement(L1, index[L1], tag[L1]);
-					Rank_Maintain(L1, index[L1], way_num[L1], MISS);
-					return MISS;
-				}
-			}
-			else
-			{
-#ifdef DBG
-				printf("read %x : L1 MISS L2 MISS\n", ADDR);
-#endif // DBG
-				switch (INCLUSION)
-				{
-				case INCLUSIVE:
-					Cache_Replacement(L2, index[L2], tag[L2]);
-					Cache_Replacement(L1, index[L1], tag[L1]);
-					return MISS;
-				case EXCLUSIVE:
-					Cache_Replacement(L1, index[L1], tag[L1]);
-					return MISS;
-				}
-			}
-		}
-		if (SIZE[level] == 0)
+		Read(level + 1, ADDR, access_count + 1);
+		if ((level > L1 && CACHE[level - 1].INCLUSION != EXCLUSIVE) || (access_count == 0))
 		{
-#ifdef DBG
-			printf("read %x : L1 MISS\n", ADDR);
-#endif // DEBUG
-			way_num[L1] = Cache_Replacement(L1, index[L1], tag[L1]);
-			Rank_Maintain(L1, index[L1], way_num[L1], MISS);
-			return MISS;
+			way_num = Cache_Replacement(level, index, tag);
+			Rank_Maintain(level, index, way_num, MISS);
 		}
+		return way_num;
 	}
 }
 
 void Write(uint8_t level, uint64_t ADDR)
 {
-	uint64_t tag[2], index[2];
-	uint32_t way_num[2];
-	if (level == L1)
+	if (level >= NUM_LEVEL)
 	{
-		uint8_t result = Read(ADDR, tag, index, way_num);
-		if (result == HIT)
-		{
 #ifdef DBG
-			printf("write %x : L1 HIT\n", ADDR);
+		printf("write %x : Main Memory HIT\n", ADDR);
 #endif // DBG
-			;
-		}
-		else
-		{
+		return;
+	}
+	uint64_t tag, index;
+	uint32_t way_num;
+	Interpret_Address(level, ADDR, &tag, &index);
+	uint8_t result = Cache_Search(level, tag, index, &way_num);
+	if (result == HIT)
+	{
 #ifdef DBG
-			printf("write %x : L1 MISS\n", ADDR);
+		printf("write %x : L%d HIT\n", ADDR, level + 1);
 #endif // DBG
-			;
-		}
 	}
 	else
 	{
-		uint64_t tag, index;
-		uint32_t way_num;
-		Interpret_Address(level, ADDR, &tag, &index);
-		uint8_t result = Cache_Search(level, tag, index, &way_num);
-		if (result == HIT)
-		{
 #ifdef DBG
-			printf("write %x : L2 HIT\n", ADDR);
+		printf("write %x : L%d MISS\n", ADDR, level + 1);
 #endif // DBG
-			;
-		}
-		else
-		{
-			way_num = Cache_Replacement(L2, index, tag);
-			;
-#ifdef DBG
-			printf("write %x : L2 MISS\n", ADDR);
-#endif // DBG
-		}
+		way_num = Read(level, ADDR, 0);
 	}
-	CACHE[level][index[level]].BLOCK[way_num[level]].DIRTY_BIT = DIRTY;
+	CACHE[level].CACHE_IC[index].BLOCK[way_num].DIRTY_BIT = DIRTY;
 }
 
