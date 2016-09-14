@@ -1,9 +1,10 @@
 #pragma once
 #ifndef REBTREE_H_
 #define REBTREE_H_
+
 typedef char _color_type;
-const _color_type _red = 0;
-const _color_type _black = 1;
+#define _red 0
+#define _black 1
 
 typedef struct _rb_tree_node* _rb_tree_node_ptr;
 typedef struct _rb_tree_node

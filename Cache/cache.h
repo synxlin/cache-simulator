@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CACHE_H_
 #define CACHE_H_
 
@@ -49,11 +50,11 @@ typedef struct cache_stat
 {
 	uint64_t num_reads;
 	uint64_t num_writes;
-	uint64_t num_read_hit;
-	uint64_t num_read_miss;
-	uint64_t num_write_hit;
-	uint64_t num_write_miss;
-	uint64_t num_write_back;
+	/*uint64_t num_read_hits;*/
+	uint64_t num_read_misses;
+	/*uint64_t num_write_hits;*/
+	uint64_t num_write_misses;
+	uint64_t num_write_backs;
 	uint64_t num_blocks_transferred;
 }cache_stat;
 
@@ -105,5 +106,7 @@ void Invalidation(uint8_t level, uint64_t ADDR);
 uint32_t Read(uint8_t level, uint64_t ADDR, uint32_t access_count);
 
 void Write(uint8_t level, uint64_t ADDR);
+
+void Cache_free();
 
 #endif

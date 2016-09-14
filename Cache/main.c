@@ -4,12 +4,14 @@
 #include "op.h"
 #include "rbtree.h"
 
+#define DBG
+
 uint32_t NUM_LEVEL;
 uint32_t BLOCKSIZE, BLOCK_OFFSET_WIDTH;
 char *TRACE_FILE;
 uint64_t trace_count;
 
-set *CACHE[2];
+cache *CACHE;
 
 uint64_t *OPTIMIZATION_TRACE;
 
@@ -25,16 +27,16 @@ int main(int argc, char* argv[])
 	uint32_t *size, *assoc, *repl_policy, *inclusion;
 	size = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (size == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 	assoc = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (assoc == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 	repl_policy = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (repl_policy == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 	inclusion = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (inclusion == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 
 	BLOCKSIZE = atoi(argv[1]);
 	size[L1] = atoi(argv[2]);
@@ -45,28 +47,23 @@ int main(int argc, char* argv[])
 	inclusion[L2] = inclusion[L1] = atoi(argv[7]);
 	TRACE_FILE = argv[8];
 
-	int i;
-	for (i = 0; i < NUM_LEVEL; i++)
-	{
+	uint8_t flag = input_check(size, assoc, repl_policy, inclusion);
 
-		if (repl_policy[i] == OPTIMIZATION)
-		{
-			OPTIMIZATION_TRACE_Initial();
-			break;
-		}
-	}
+	if (flag == 1)
+		OPTIMIZATION_TRACE_Initial();
 
 	Cache_Initial(size, assoc, repl_policy, inclusion);
 
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
-		error_exit("fopen")
+		_error_exit("fopen")
 	while (1)
 	{
 		int result;
 		uint8_t OP;
 		uint64_t ADDR;
-		result = fscanf(trace_file_fp, "%c %x", &OP, &ADDR);
+		result = fscanf(trace_file_fp, "%c %llx", &OP, &ADDR);
+		trace_count++;
 		if (result == EOF)
 			break;
 		switch (OP)
@@ -78,9 +75,15 @@ int main(int argc, char* argv[])
 			Write(L1, ADDR);
 			break;
 		default:
-			input_error_exit("error: wrong operation type. Legal operations are read 'r' and write 'w'.\n")
+			_input_error_exit("error: wrong operation type. Legal operations are read 'r' and write 'w'.\n")
 			break;
 		}
 	}
 	fclose(trace_file_fp);
+
+	file_output();
+
+	if (flag == 1)
+		free(OPTIMIZATION_TRACE);
+	Cache_free();
 }

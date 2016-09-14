@@ -10,7 +10,7 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint3
 	int j;
 	CACHE = (cache *)malloc(sizeof(cache)*NUM_LEVEL);
 	if (CACHE == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 	BLOCK_OFFSET_WIDTH = log_2(BLOCKSIZE);
 	for (j = 0; j < NUM_LEVEL; j++)
 	{
@@ -23,20 +23,20 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint3
 		CACHE[j].SET_NUM = CACHE[j].SIZE / (CACHE[j].ASSOC * BLOCKSIZE);
 		
 		CACHE[j].INDEX_WIDTH = log_2(CACHE[j].SET_NUM);
-		CACHE[j].TAG_WIDTH = 32 - CACHE[j].INDEX_WIDTH - BLOCK_OFFSET_WIDTH;
+		CACHE[j].TAG_WIDTH = 64 - CACHE[j].INDEX_WIDTH - BLOCK_OFFSET_WIDTH;
 
 		CACHE[j].CACHE_IC = (set *)malloc(sizeof(set) * CACHE[j].SET_NUM);
 		if (CACHE[j].CACHE_IC == NULL)
-			error_exit("malloc")
+			_error_exit("malloc")
 		uint32_t i;
 		for (i = 0; i < CACHE[j].SET_NUM; i++)
 		{
 			CACHE[j].CACHE_IC[i].BLOCK = (block *)malloc(sizeof(block) * CACHE[j].ASSOC);
 			if (CACHE[j].CACHE_IC[i].BLOCK == NULL)
-				error_exit("malloc")
+				_error_exit("malloc")
 			CACHE[j].CACHE_IC[i].RANK = (uint64_t *)malloc(sizeof(uint64_t) * CACHE[j].ASSOC);
 			if (CACHE[j].CACHE_IC[i].RANK == NULL)
-				error_exit("malloc")
+				_error_exit("malloc")
 		}
 	}
 }
@@ -45,17 +45,17 @@ void OPTIMIZATION_TRACE_Initial()
 {
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
-		error_exit("fopen()")
+		_error_exit("fopen()")
 	uint64_t trace_len = 1000, i = 0;
 	uint64_t *trace = (uint64_t *)malloc(sizeof(uint64_t) * trace_len);
 	if (trace == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 	while (1)
 	{
 		int result;
 		uint8_t OP;
 		uint64_t ADDR;
-		result = fscanf(trace_file_fp, "%c %x", &OP, &ADDR);
+		result = fscanf(trace_file_fp, "%c %llx", &OP, &ADDR);
 		if (result == EOF)
 			break;
 		if (i > trace_len)
@@ -63,7 +63,7 @@ void OPTIMIZATION_TRACE_Initial()
 			trace_len *= 2;
 			trace = (uint32_t *)realloc(OPTIMIZATION_TRACE, trace_len);
 			if (trace == NULL)
-				error_exit("realloc")
+				_error_exit("realloc")
 		}
 		trace[i] = ADDR;
 		i++;
@@ -72,11 +72,11 @@ void OPTIMIZATION_TRACE_Initial()
 
 	OPTIMIZATION_TRACE = (uint64_t *)malloc(sizeof(uint64_t) * i);
 	if (OPTIMIZATION_TRACE == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 
 	_rb_tree_ptr T = (_rb_tree_ptr)malloc(sizeof(struct _rb_tree));
 	if (T == NULL)
-		error_exit("malloc")
+		_error_exit("malloc")
 	T->_root = NULL;
 	uint64_t j;
 	for (j = i - 1; j >= 0; j--)
@@ -100,7 +100,7 @@ void OPTIMIZATION_TRACE_Initial()
 void Interpret_Address(uint32_t level, uint64_t ADDR, uint64_t *tag, uint64_t *index)
 {
 	uint32_t tag_width = CACHE[level].TAG_WIDTH;
-	*tag = ADDR >> (32 - tag_width);
+	*tag = ADDR >> (64 - tag_width);
 	*index = (ADDR << tag_width) >> (tag_width + BLOCK_OFFSET_WIDTH);
 }
 
@@ -212,11 +212,13 @@ uint32_t Cache_Replacement(uint8_t level, uint64_t index, uint64_t tag)
 	block *tmp = &(CACHE[level].CACHE_IC[index].BLOCK[way_num]);
 	if (tmp->VALID_BIT == INVALID)
 	{
-		tmp->VALID_BIT = VALID;
-		tmp->TAG = tag;
 #ifdef DBG
 		printf("create new in L%1d\n", level+1);
 #endif // DBG
+		tmp->VALID_BIT = VALID;
+		tmp->TAG = tag;
+		tmp->DIRTY_BIT = CLEAN;
+
 	}
 	else
 	{
@@ -225,10 +227,17 @@ uint32_t Cache_Replacement(uint8_t level, uint64_t index, uint64_t tag)
 		printf("replace old %x in L%1d - write back\n", ADDR, level+1);
 		printf("replace new\n");
 #endif // DBG	
-		Write_Back(level, ADDR);
-
 		if (tmp->DIRTY_BIT == DIRTY)
-			tmp->DIRTY_BIT = CLEAN;
+		{
+			CACHE[level].CACHE_STAT.num_write_backs++;
+			Write_Back(level, ADDR);
+		}
+		else
+		{
+			if (CACHE[level].REPL_POLICY == EXCLUSIVE)
+				Write_Back(level, ADDR);
+		}
+		tmp->DIRTY_BIT = CLEAN;
 		tmp->TAG = tag;
 	}
 	return way_num;
@@ -252,7 +261,10 @@ void Write_Back(uint8_t level, uint64_t ADDR)
 		Interpret_Address(nxt_level, ADDR, &tag, &index);
 		uint8_t result = Cache_Search(nxt_level, tag, index, &way_num);
 		if (result == HIT) // HIT说明新的没有和旧的重复, MISS说明已经被新的替换了, 需要从下级写回下下级
+		{
 			CACHE[nxt_level].CACHE_IC[index].BLOCK[way_num].DIRTY_BIT = DIRTY;
+			CACHE[nxt_level].CACHE_STAT.num_writes++;
+		}
 		else
 			Write_Back(nxt_level, ADDR);
 		break;
@@ -293,8 +305,10 @@ uint32_t Read(uint8_t level, uint64_t ADDR, uint32_t access_count)
 #ifdef DBG
 		printf("read %x : Main Memory HIT\n", ADDR);
 #endif // DBG
+		CACHE[NUM_LEVEL - 1].CACHE_STAT.num_blocks_transferred++;
 		return 0;
 	}
+	CACHE[level].CACHE_STAT.num_reads++;
 	uint64_t tag, index;
 	uint32_t way_num;
 	Interpret_Address(level, ADDR, &tag, &index);
@@ -314,6 +328,7 @@ uint32_t Read(uint8_t level, uint64_t ADDR, uint32_t access_count)
 #ifdef DBG
 		printf("read %x : L%d MISS\n", ADDR, level + 1);
 #endif // DBG
+		CACHE[level].CACHE_STAT.num_read_misses++;
 		Read(level + 1, ADDR, access_count + 1);
 		if ((level > L1 && CACHE[level - 1].INCLUSION != EXCLUSIVE) || (access_count == 0))
 		{
@@ -331,8 +346,10 @@ void Write(uint8_t level, uint64_t ADDR)
 #ifdef DBG
 		printf("write %x : Main Memory HIT\n", ADDR);
 #endif // DBG
+		CACHE[NUM_LEVEL - 1].CACHE_STAT.num_blocks_transferred++;
 		return;
 	}
+	CACHE[level].CACHE_STAT.num_writes++;
 	uint64_t tag, index;
 	uint32_t way_num;
 	Interpret_Address(level, ADDR, &tag, &index);
@@ -349,7 +366,25 @@ void Write(uint8_t level, uint64_t ADDR)
 		printf("write %x : L%d MISS\n", ADDR, level + 1);
 #endif // DBG
 		way_num = Read(level, ADDR, 0);
+		CACHE[level].CACHE_STAT.num_reads--;
+		CACHE[level].CACHE_STAT.num_read_misses--;
+		CACHE[level].CACHE_STAT.num_write_misses++;
 	}
 	CACHE[level].CACHE_IC[index].BLOCK[way_num].DIRTY_BIT = DIRTY;
 }
 
+void Cache_free()
+{
+	uint32_t i;
+	for (i = 0; i < NUM_LEVEL; i++)
+	{
+		uint32_t j;
+		for (j = 0; j < CACHE[i].SET_NUM; j++)
+		{
+			free(CACHE[i].CACHE_IC[j].BLOCK);
+			free(CACHE[i].CACHE_IC[j].RANK);
+		}
+		free(CACHE[i].CACHE_IC);
+	}
+	free(CACHE);
+}
