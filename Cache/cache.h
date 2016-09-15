@@ -2,6 +2,10 @@
 #ifndef CACHE_H_
 #define CACHE_H_
 
+#ifndef DBG
+//#define DBG
+#endif
+
 #define L1 0
 #define L2 1
 
@@ -89,23 +93,23 @@ void OPTIMIZATION_TRACE_Initial();
 
 void Interpret_Address(uint32_t level, uint64_t ADDR, uint64_t *tag, uint64_t *index);
 
-uint64_t Rebuild_Address(uint8_t level, uint64_t tag, uint64_t index);
+uint64_t Rebuild_Address(uint32_t level, uint64_t tag, uint64_t index);
 
-uint8_t Cache_Search(uint8_t level, uint64_t tag, uint64_t index, uint32_t *way_num);
+uint8_t Cache_Search(uint32_t level, uint64_t tag, uint64_t index, uint32_t *way_num);
 
-void Rank_Maintain(uint8_t level, uint64_t index, uint32_t way_num, uint8_t result);
+void Rank_Maintain(uint32_t level, uint64_t index, uint32_t way_num, uint8_t result);
 
-uint32_t Rank_Top(uint8_t level, const uint64_t *rank);
+uint32_t Rank_Top(uint32_t level, const uint64_t *rank);
 
-uint32_t Cache_Replacement(uint8_t level, uint64_t index, uint64_t tag);
+uint32_t Cache_Replacement(uint32_t level, uint64_t index, uint64_t tag);
 
-void Write_Back(uint8_t level, uint64_t ADDR);
+void Write_Back(uint32_t level, uint64_t ADDR);
 
-void Invalidation(uint8_t level, uint64_t ADDR);
+void Invalidation(uint32_t level, uint64_t ADDR);
 
-uint32_t Read(uint8_t level, uint64_t ADDR, uint32_t access_count);
+uint32_t Read(uint32_t level, uint64_t ADDR, uint32_t access_count);
 
-void Write(uint8_t level, uint64_t ADDR);
+void Write(uint32_t level, uint64_t ADDR);
 
 void Cache_free();
 

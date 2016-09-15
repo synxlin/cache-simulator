@@ -162,8 +162,8 @@ void _rb_tree_node_clear(_rb_tree_node_ptr T)
 {
 	if (T == NULL)
 		return;
-	_rb_tree_clear(T->_left);
-	_rb_tree_clear(T->_right);
+	_rb_tree_node_clear(T->_left);
+	_rb_tree_node_clear(T->_right);
 	free(T);
 }
 

@@ -4,8 +4,6 @@
 #include "op.h"
 #include "rbtree.h"
 
-#define DBG
-
 uint32_t NUM_LEVEL;
 uint32_t BLOCKSIZE, BLOCK_OFFSET_WIDTH;
 char *TRACE_FILE;
@@ -22,7 +20,13 @@ int main(int argc, char* argv[])
 		printf("Usage: %s <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L2_SIZE> <L2_ASSOC> <REPL_POLICY> <INCLUSION> <TRACE_FILE>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	NUM_LEVEL = 2;
+	/*
+	 *	originally design for N-level Cache
+	 *	input should be (program) <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L1_REPL_POLICY> <L1/L2_INCLUSION> <L2_SIZE> <L2_ASSOC> <L2_REPL_POLICY> <L2/L3_INCLUSION> ...<LN_REPL_POLICY> <TRACE_FILE>
+	 *	assume <LN/MAIN_MEMORY_INCLUSION> = NON_INCLUSIVE
+	 *	NUM_LEVEL = (argc + 1 - 3) / 4;
+	 */
+	NUM_LEVEL = ((atoi(argv[4])) == 0) ? 1 : 2;
 
 	uint32_t *size, *assoc, *repl_policy, *inclusion;
 	size = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
@@ -60,10 +64,11 @@ int main(int argc, char* argv[])
 	while (1)
 	{
 		int result;
-		uint8_t OP;
+		uint8_t OP, line;
 		uint64_t ADDR;
-		result = fscanf(trace_file_fp, "%c %llx", &OP, &ADDR);
+		result = fscanf(trace_file_fp, "%c %llx%c", &OP, &ADDR, &line);
 		trace_count++;
+		printf("OP: %llu\n", trace_count);
 		if (result == EOF)
 			break;
 		switch (OP)
