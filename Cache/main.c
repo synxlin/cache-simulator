@@ -48,7 +48,8 @@ int main(int argc, char* argv[])
 	size[L2] = atoi(argv[4]);
 	assoc[L2] = atoi(argv[5]);
 	repl_policy[L2] = repl_policy[L1] = atoi(argv[6]);
-	inclusion[L2] = inclusion[L1] = atoi(argv[7]);
+	inclusion[L1] = atoi(argv[7]);
+	inclusion[L2] = NON_INCLUSIVE;
 	TRACE_FILE = argv[8];
 
 	uint8_t flag = input_check(size, assoc, repl_policy, inclusion);
@@ -68,16 +69,20 @@ int main(int argc, char* argv[])
 		uint64_t ADDR;
 		result = fscanf(trace_file_fp, "%c %llx%c", &OP, &ADDR, &line);
 		trace_count++;
-		printf("OP: %llu\n", trace_count);
+		//printf("OP: %llu\n", trace_count);
 		if (result == EOF)
 			break;
 		switch (OP)
 		{
 		case READ:
-			Read(L1, ADDR, 0);
-			break;
+		{
+			block *blk = (block *)malloc(sizeof(block));
+			Read(L1, ADDR, blk, 0);
+			free(blk);
+			break; 
+		}
 		case WRITE:
-			Write(L1, ADDR);
+			Write(L1, ADDR, DIRTY);
 			break;
 		default:
 			_input_error_exit("error: wrong operation type. Legal operations are read 'r' and write 'w'.\n")

@@ -45,9 +45,10 @@ void file_output()
 	fprintf(fp, "BLOCKSIZE:             %u\n", BLOCKSIZE);
 	fprintf(fp, "L1_SIZE:               %u\n", CACHE[L1].SIZE);
 	fprintf(fp, "L1_ASSOC:              %u\n", CACHE[L1].ASSOC);
-	fprintf(fp, "L2_SIZE:               %u\n", CACHE[L2].SIZE);
-	uint64_t num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].ASSOC;
-	fprintf(fp, "L2_ASSOC:              %u\n", num_L2);
+	uint64_t num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].SIZE;
+	fprintf(fp, "L2_SIZE:               %llu\n", num_L2);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].ASSOC;
+	fprintf(fp, "L2_ASSOC:              %llu\n", num_L2);
 	fprintf(fp, "REPLACEMENT POLICY:    %s\n", NAME_REPL_POLICY[CACHE[L1].REPL_POLICY]);
 	fprintf(fp, "INCLUSION PROPERTY:    %s\n", NAME_INCLUSION[CACHE[L1].INCLUSION]);
 	fprintf(fp, "trace_file:            %s\n", TRACE_FILE);
@@ -65,7 +66,7 @@ void file_output()
 	fprintf(fp, "h. number of L2 read misses:  %llu\n", num_L2);
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_writes;
 	fprintf(fp, "i. number of L2 writes:       %llu\n", num_L2);
-	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_read_misses;
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
 	fprintf(fp, "j. number of L2 write misses: %llu\n", num_L2);
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
 	miss_rate = ((double)CACHE[L2].CACHE_STAT.num_read_misses + (double)CACHE[L2].CACHE_STAT.num_write_misses) / ((double)CACHE[L2].CACHE_STAT.num_reads + (double)CACHE[L2].CACHE_STAT.num_writes);

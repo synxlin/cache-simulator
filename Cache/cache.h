@@ -3,7 +3,7 @@
 #define CACHE_H_
 
 #ifndef DBG
-//#define DBG
+#define DBG
 #endif
 
 #define L1 0
@@ -101,15 +101,15 @@ void Rank_Maintain(uint32_t level, uint64_t index, uint32_t way_num, uint8_t res
 
 uint32_t Rank_Top(uint32_t level, const uint64_t *rank);
 
-uint32_t Cache_Replacement(uint32_t level, uint64_t index, uint64_t tag);
+uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk);
 
-void Write_Back(uint32_t level, uint64_t ADDR);
+void Write_Back(uint32_t level, uint64_t ADDR, uint8_t dirty_bit);
 
 void Invalidation(uint32_t level, uint64_t ADDR);
 
-uint32_t Read(uint32_t level, uint64_t ADDR, uint32_t access_count);
+uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint32_t access_count);
 
-void Write(uint32_t level, uint64_t ADDR);
+void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit);
 
 void Cache_free();
 
