@@ -13,7 +13,7 @@ extern char *NAME_INCLUSION[];
 
 uint32_t log_2(uint32_t num);
 
-uint8_t input_check(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint32_t *inclusion);
+void input_check(uint32_t *size, uint32_t *assoc, uint32_t *inclusion);
 
 void file_output();
 

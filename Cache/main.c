@@ -5,7 +5,7 @@
 #include "rbtree.h"
 
 uint32_t NUM_LEVEL;
-uint32_t BLOCKSIZE, BLOCK_OFFSET_WIDTH;
+uint32_t BLOCKSIZE, REPL_POLICY, BLOCK_OFFSET_WIDTH;
 char *TRACE_FILE;
 uint64_t trace_count;
 
@@ -32,15 +32,12 @@ int main(int argc, char* argv[])
 	 */
 	NUM_LEVEL = ((atoi(argv[4])) == 0) ? 1 : 2;
 
-	uint32_t *size, *assoc, *repl_policy, *inclusion;
+	uint32_t *size, *assoc, *inclusion;
 	size = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (size == NULL)
 		_error_exit("malloc")
 	assoc = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (assoc == NULL)
-		_error_exit("malloc")
-	repl_policy = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
-	if (repl_policy == NULL)
 		_error_exit("malloc")
 	inclusion = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (inclusion == NULL)
@@ -51,17 +48,17 @@ int main(int argc, char* argv[])
 	assoc[L1] = atoi(argv[3]);
 	size[L2] = atoi(argv[4]);
 	assoc[L2] = atoi(argv[5]);
-	repl_policy[L2] = repl_policy[L1] = atoi(argv[6]);
+	REPL_POLICY = atoi(argv[6]);
 	inclusion[L1] = atoi(argv[7]);
 	inclusion[L2] = NON_INCLUSIVE;
 	TRACE_FILE = argv[8];
 
-	uint8_t flag = input_check(size, assoc, repl_policy, inclusion);
+	input_check(size, assoc, inclusion);
 
-	if (flag == 1)
+	if (REPL_POLICY == OPTIMIZATION)
 		OPTIMIZATION_TRACE_Initial();
 
-	Cache_Initial(size, assoc, repl_policy, inclusion);
+	Cache_Initial(size, assoc, inclusion);
 
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
@@ -74,11 +71,15 @@ int main(int argc, char* argv[])
 
 	while (1)
 	{
+#ifdef DBG
+		fprintf(debug_fp, "--------------\n\n");
+#endif
 		int result;
 		uint8_t OP, line;
 		uint64_t ADDR;
 		result = fscanf(trace_file_fp, "%c %llx%c", &OP, &ADDR, &line);
 		trace_count++;
+		uint64_t rank_value = (REPL_POLICY == OPTIMIZATION) ? OPTIMIZATION_TRACE[trace_count] : trace_count;
 		if (result == EOF)
 			break;
 		switch (OP)
@@ -86,12 +87,12 @@ int main(int argc, char* argv[])
 		case READ:
 		{
 			block *blk = (block *)malloc(sizeof(block));
-			Read(L1, ADDR, blk, 0);
+			Read(L1, ADDR, blk, rank_value);
 			free(blk);
 			break; 
 		}
 		case WRITE:
-			Write(L1, ADDR, DIRTY);
+			Write(L1, ADDR, DIRTY, rank_value);
 			break;
 		default:
 			_input_error_exit("error: wrong operation type. Legal operations are read 'r' and write 'w'.\n")
@@ -102,7 +103,7 @@ int main(int argc, char* argv[])
 
 	file_output();
 
-	if (flag == 1)
+	if (REPL_POLICY == OPTIMIZATION)
 		free(OPTIMIZATION_TRACE);
 	Cache_free();
 }

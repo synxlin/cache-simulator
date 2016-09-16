@@ -15,24 +15,20 @@ uint32_t log_2(uint32_t num)
 	return result;
 }
 
-uint8_t input_check(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint32_t *inclusion)
+void input_check(uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 {
 	uint32_t i;
-	uint8_t optimizatoin_flag = 0;
+	if(REPL_POLICY < LRU || REPL_POLICY > OPTIMIZATION)
+			_input_error_exit("error: wrong replacement policy")
 	for (i = 0; i < NUM_LEVEL; i++)
 	{
 		if(!_is_power_of_2(size[i]))
 			_input_error_exit("error: wrong cache size")
 		if(!_is_power_of_2(assoc[i]))
 			_input_error_exit("error: wrong associatity")
-		if(repl_policy[i] < LRU || repl_policy[i] > OPTIMIZATION)
-			_input_error_exit("error: wrong replacement policy")
 		if(inclusion[i] < NON_INCLUSIVE || inclusion[i] > EXCLUSIVE)
 			_input_error_exit("error: wrong inclusion")
-		if (repl_policy[i] == OPTIMIZATION)
-			optimizatoin_flag = 1;
 	}
-	return optimizatoin_flag;
 }
 
 void file_output()
@@ -43,14 +39,14 @@ void file_output()
 
 	fprintf(fp, "===== Simulator configuration =====\n");
 	fprintf(fp, "BLOCKSIZE:             %u\n", BLOCKSIZE);
-	fprintf(fp, "L1_SIZE:               %u\n", CACHE[L1].SIZE);
-	fprintf(fp, "L1_ASSOC:              %u\n", CACHE[L1].ASSOC);
-	uint64_t num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].SIZE;
+	fprintf(fp, "L1_SIZE:               %u\n", CACHE[L1].CACHE_ATTRIBUTES.SIZE);
+	fprintf(fp, "L1_ASSOC:              %u\n", CACHE[L1].CACHE_ATTRIBUTES.ASSOC);
+	uint64_t num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_ATTRIBUTES.SIZE;
 	fprintf(fp, "L2_SIZE:               %llu\n", num_L2);
-	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].ASSOC;
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_ATTRIBUTES.ASSOC;
 	fprintf(fp, "L2_ASSOC:              %llu\n", num_L2);
-	fprintf(fp, "REPLACEMENT POLICY:    %s\n", NAME_REPL_POLICY[CACHE[L1].REPL_POLICY]);
-	fprintf(fp, "INCLUSION PROPERTY:    %s\n", NAME_INCLUSION[CACHE[L1].INCLUSION]);
+	fprintf(fp, "REPLACEMENT POLICY:    %s\n", NAME_REPL_POLICY[REPL_POLICY]);
+	fprintf(fp, "INCLUSION PROPERTY:    %s\n", NAME_INCLUSION[CACHE[L1].CACHE_ATTRIBUTES.INCLUSION]);
 	fprintf(fp, "trace_file:            %s\n", TRACE_FILE);
 	fprintf(fp, "===== Simulation results (raw) =====\n");
 	fprintf(fp, "a. number of L1 reads:        %llu\n", CACHE[L1].CACHE_STAT.num_reads);
