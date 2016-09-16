@@ -3,7 +3,7 @@
 #define CACHE_H_
 
 #ifndef DBG
-#define DBG
+//#define DBG
 #endif
 
 #define L1 0
@@ -87,6 +87,10 @@ extern char* TRACE_FILE;
 extern uint64_t trace_count;
 extern uint64_t *OPTIMIZATION_TRACE;
 
+#ifdef DBG
+extern FILE *debug_fp;
+#endif
+
 void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *repl_policy, uint32_t *inclusion);
 
 void OPTIMIZATION_TRACE_Initial();
@@ -99,13 +103,11 @@ uint8_t Cache_Search(uint32_t level, uint64_t tag, uint64_t index, uint32_t *way
 
 void Rank_Maintain(uint32_t level, uint64_t index, uint32_t way_num, uint8_t result);
 
-uint32_t Rank_Top(uint32_t level, const uint64_t *rank);
+uint32_t Rank_Top(uint32_t level, uint64_t index);
 
 uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk);
 
-void Write_Back(uint32_t level, uint64_t ADDR, uint8_t dirty_bit);
-
-void Invalidation(uint32_t level, uint64_t ADDR);
+void Invalidation(uint32_t level, uint64_t ADDR, uint32_t level_floor);
 
 uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint32_t access_count);
 

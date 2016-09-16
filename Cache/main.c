@@ -13,6 +13,10 @@ cache *CACHE;
 
 uint64_t *OPTIMIZATION_TRACE;
 
+#ifdef DBG
+FILE *debug_fp;
+#endif
+
 int main(int argc, char* argv[])
 {
 	if (argc != 9)
@@ -62,6 +66,12 @@ int main(int argc, char* argv[])
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
 		_error_exit("fopen")
+#ifdef DBG
+	debug_fp = fopen("debug.txt", "w");
+	if (debug_fp == NULL)
+		_error_exit("fopen")
+#endif
+
 	while (1)
 	{
 		int result;
@@ -69,7 +79,6 @@ int main(int argc, char* argv[])
 		uint64_t ADDR;
 		result = fscanf(trace_file_fp, "%c %llx%c", &OP, &ADDR, &line);
 		trace_count++;
-		//printf("OP: %llu\n", trace_count);
 		if (result == EOF)
 			break;
 		switch (OP)
