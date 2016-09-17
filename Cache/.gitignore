@@ -41,3 +41,4 @@ VALIDATION/
 
 # output files
 *.txt
+sim_cache
