@@ -36,9 +36,9 @@
 *.su
 
 # validation files
-*.t
+#*.t
 VALIDATION/
 
 # output files
 *.txt
-sim_cache
+#sim_cache
