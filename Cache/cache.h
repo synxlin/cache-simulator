@@ -16,8 +16,8 @@
 #define INCLUSIVE 1
 #define EXCLUSIVE 2
 
-#define READ 'r'
-#define WRITE 'w'
+#define OP_READ 'r'
+#define OP_WRITE 'w'
 #define HIT 0
 #define MISS 1
 
@@ -107,7 +107,7 @@ uint32_t Rank_Top(uint32_t level, uint64_t index);
 
 uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk);
 
-void Invalidation(uint32_t level, uint64_t ADDR, uint32_t level_floor);
+void Invalidation(uint32_t level, uint64_t ADDR);
 
 uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value);
 

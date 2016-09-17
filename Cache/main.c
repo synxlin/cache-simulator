@@ -84,14 +84,14 @@ int main(int argc, char* argv[])
 			break;
 		switch (OP)
 		{
-		case READ:
+		case OP_READ:
 		{
 			block *blk = (block *)malloc(sizeof(block));
 			Read(L1, ADDR, blk, rank_value);
 			free(blk);
 			break; 
 		}
-		case WRITE:
+		case OP_WRITE:
 			Write(L1, ADDR, DIRTY, rank_value);
 			break;
 		default:

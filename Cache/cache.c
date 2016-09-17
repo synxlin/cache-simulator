@@ -64,7 +64,7 @@ void OPTIMIZATION_TRACE_Initial()
 		if (i > trace_len)
 		{
 			trace_len *= 2;
-			trace = (uint64_t *)realloc(OPTIMIZATION_TRACE, trace_len);
+			trace = (uint64_t *)realloc(OPTIMIZATION_TRACE, sizeof(uint64_t) * trace_len);
 			if (trace == NULL)
 				_error_exit("realloc")
 		}
@@ -159,10 +159,7 @@ void Rank_Maintain(uint32_t level, uint64_t index, uint32_t way_num, uint8_t res
 		rank[idx] = 1 - l_or_r;
 		break;
 	}
-	case OPTIMIZATION:
-		rank[way_num] = rank_value;
-		break;
-	case LRU:
+	default:
 		rank[way_num] = rank_value;
 		break;
 	}
@@ -254,7 +251,7 @@ uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk)
 			}
 		}
 		if (level > L1)
-			Invalidation(level - 1, ADDR, level + 1);
+			Invalidation(level - 1, ADDR);
 		tmp->TAG = blk.TAG;
 		tmp->DIRTY_BIT = blk.DIRTY_BIT;
 #ifdef DBG
@@ -264,32 +261,37 @@ uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk)
 	return way_num;
 }
 
-void Invalidation(uint32_t level, uint64_t ADDR, uint32_t level_floor)
+void Invalidation(uint32_t level, uint64_t ADDR)
 {
-	switch (CACHE[level].CACHE_ATTRIBUTES.INCLUSION)
+	uint32_t level_invalidation_signal_from = level + 1;
+	while (level >= L1)
 	{
-	case INCLUSIVE:
-	{
-		uint64_t tag, index;
-		uint32_t way_num;
-		Interpret_Address(level, ADDR, &tag, &index);
-		uint8_t result = Cache_Search(level, tag, index, &way_num);
-		if (result == HIT)
+		switch (CACHE[level].CACHE_ATTRIBUTES.INCLUSION)
 		{
-			CACHE[level].SET[index].BLOCK[way_num].VALID_BIT = INVALID;
-#ifdef DBG
-			fprintf(debug_fp, "Invalidation %llx : Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
-#endif
-			if (CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT == DIRTY)
-				Write(level_floor, ADDR, DIRTY, CACHE[level].SET[index].RANK[way_num]);
+		case INCLUSIVE:
+		{
+			uint64_t tag, index;
+			uint32_t way_num;
+			Interpret_Address(level, ADDR, &tag, &index);
+			uint8_t result = Cache_Search(level, tag, index, &way_num);
+			if (result == HIT)
+			{
+				CACHE[level].SET[index].BLOCK[way_num].VALID_BIT = INVALID;
+	#ifdef DBG
+				fprintf(debug_fp, "Invalidation %llx : Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
+	#endif
+				if (CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT == DIRTY)
+					Write(level_invalidation_signal_from, ADDR, DIRTY, CACHE[level].SET[index].RANK[way_num]);
+			}
+			if (level == L1)
+				return;
+			else
+				level--;
+			break;
 		}
-		if (level > L1)
-			Invalidation(level - 1, ADDR, level_floor);
-		else
+		default:
 			return;
-	}
-	default:
-		return;
+		}
 	}
 }
 
@@ -357,6 +359,7 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 				fprintf(debug_fp, "Read %llx Miss Load: Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
 #endif
 			}
+			return way_num;
 		}
 		
 	}
