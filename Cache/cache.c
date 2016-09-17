@@ -337,15 +337,28 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 		CACHE[level].CACHE_STAT.num_read_misses++;
 		Read(level + 1, ADDR, blk, rank_value);
 		blk->TAG = tag;
-		if ((level == L1) || (CACHE[level - 1].CACHE_ATTRIBUTES.INCLUSION != EXCLUSIVE))
+		if (level == L1)
 		{
 			way_num = Cache_Replacement(level, index, *blk);
 			Rank_Maintain(level, index, way_num, MISS, rank_value);
 #ifdef DBG
 			fprintf(debug_fp, "Read %llx Miss Load: Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
 #endif
+			return way_num;
 		}
-		return way_num;
+		else
+		{
+			if (CACHE[level - 1].CACHE_ATTRIBUTES.INCLUSION != EXCLUSIVE)
+			{
+				way_num = Cache_Replacement(level, index, *blk);
+				/*CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT = CLEAN;*/
+				Rank_Maintain(level, index, way_num, MISS, rank_value);
+#ifdef DBG
+				fprintf(debug_fp, "Read %llx Miss Load: Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
+#endif
+			}
+		}
+		
 	}
 }
 
