@@ -30,6 +30,13 @@ int main(int argc, char* argv[])
 	 *	assume <LN/MAIN_MEMORY_INCLUSION> = NON_INCLUSIVE
 	 *	NUM_LEVEL = (argc + 1 - 3) / 4;
 	 */
+
+#ifdef DBG
+	debug_fp = fopen("debug.txt", "w");
+	if (debug_fp == NULL)
+		_error_exit("fopen")
+#endif
+
 	NUM_LEVEL = ((atoi(argv[4])) == 0) ? 1 : 2;
 
 	uint32_t *size, *assoc, *inclusion;
@@ -63,11 +70,6 @@ int main(int argc, char* argv[])
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
 		_error_exit("fopen")
-#ifdef DBG
-	debug_fp = fopen("debug.txt", "w");
-	if (debug_fp == NULL)
-		_error_exit("fopen")
-#endif
 
 	while (1)
 	{
@@ -79,7 +81,7 @@ int main(int argc, char* argv[])
 		uint64_t ADDR;
 		result = fscanf(trace_file_fp, "%c %llx%c", &OP, &ADDR, &line);
 		trace_count++;
-		uint64_t rank_value = (REPL_POLICY == OPTIMIZATION) ? OPTIMIZATION_TRACE[trace_count] : trace_count;
+		uint64_t rank_value = (REPL_POLICY == OPTIMIZATION) ? OPTIMIZATION_TRACE[trace_count - 1] : trace_count;
 		if (result == EOF)
 			break;
 		switch (OP)

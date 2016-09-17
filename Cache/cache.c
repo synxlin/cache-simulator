@@ -56,9 +56,9 @@ void OPTIMIZATION_TRACE_Initial()
 	while (1)
 	{
 		int result;
-		uint8_t OP;
+		uint8_t OP, line;
 		uint64_t ADDR;
-		result = fscanf(trace_file_fp, "%c %llx", &OP, &ADDR);
+		result = fscanf(trace_file_fp, "%c %llx%c", &OP, &ADDR, &line);
 		if (result == EOF)
 			break;
 		if (i > trace_len)
@@ -88,14 +88,20 @@ void OPTIMIZATION_TRACE_Initial()
 		if (_result == NULL)
 		{
 			_rb_tree_insert(T, trace[i - j - 1], i - j - 1);
-			OPTIMIZATION_TRACE[j] = i + 1;
+			OPTIMIZATION_TRACE[i - j - 1] = i + 1;
 		}
 		else
 		{
-			OPTIMIZATION_TRACE[j] = _result->value - (i - j - 1);
+			OPTIMIZATION_TRACE[i - j - 1] = _result->value - (i - j - 1);
 			_result->value = i - j - 1;
 		}
+#ifdef DBG
+		fprintf(debug_fp, "%llu ", OPTIMIZATION_TRACE[i - j - 1]);
+#endif
 	}
+#ifdef DBG
+		fprintf(debug_fp, "\n\n");
+#endif
 	free(trace);
 	_rb_tree_clear(T);
 }
