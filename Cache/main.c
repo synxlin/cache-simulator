@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 		case OP_READ:
 		{
 			block *blk = (block *)malloc(sizeof(block));
-			Read(L1, ADDR, blk, rank_value);
+			Read(L1, ADDR, blk, 0);
 			free(blk);
 			break; 
 		}
@@ -104,6 +104,25 @@ int main(int argc, char* argv[])
 	fclose(trace_file_fp);
 
 	file_output();
+
+#ifdef DBG
+	fprintf(debug_fp, "\n-----------------\n");
+	int i, j, k;
+	for (i = 0; i < NUM_LEVEL; i++)
+	{
+		for (j = 0; j < CACHE[i].CACHE_ATTRIBUTES.SET_NUM; j++)
+		{
+			for(k = 0; k < CACHE[i].CACHE_ATTRIBUTES.ASSOC; k++)
+				fprintf(debug_fp, "%llx\t", Rebuild_Address(i, CACHE[i].SET[j].BLOCK[k].TAG, j));
+			fprintf(debug_fp, "\n");
+			for(k = 0; k < CACHE[i].CACHE_ATTRIBUTES.ASSOC; k++)
+				fprintf(debug_fp, "%s\t", CACHE[i].SET[j].BLOCK[k].DIRTY_BIT ? "ditry" : "clean");
+			fprintf(debug_fp, "\n");
+		}
+		fprintf(debug_fp, "\n");
+	}
+	fclose(debug_fp);
+#endif
 
 	if (REPL_POLICY == OPTIMIZATION)
 		free(OPTIMIZATION_TRACE);

@@ -50,6 +50,7 @@ typedef struct set
 
 typedef struct cache_stat
 {
+	uint64_t num_access;
 	uint64_t num_reads;
 	uint64_t num_writes;
 	/*uint64_t num_read_hits;*/
@@ -109,7 +110,7 @@ uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk);
 
 void Invalidation(uint32_t level, uint64_t ADDR);
 
-uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value);
+uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint32_t access_time);
 
 void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value);
 

@@ -301,7 +301,7 @@ void Invalidation(uint32_t level, uint64_t ADDR)
 	}
 }
 
-uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
+uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint32_t access_time)
 {
 	if (level >= NUM_LEVEL)
 	{
@@ -313,8 +313,9 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 		blk->VALID_BIT = VALID;
 		return 0;
 	}
+	CACHE[level].CACHE_STAT.num_access++;
 	CACHE[level].CACHE_STAT.num_reads++;
-	uint64_t tag, index;
+	uint64_t tag, index, rank_value = (REPL_POLICY == OPTIMIZATION) ? OPTIMIZATION_TRACE[CACHE[L1].CACHE_STAT.num_access] : CACHE[level].CACHE_STAT.num_access;
 	uint32_t way_num = 0;
 	Interpret_Address(level, ADDR, &tag, &index);
 	uint8_t result = Cache_Search(level, tag, index, &way_num);
@@ -324,16 +325,15 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 		fprintf(debug_fp, "Read %llx : Cache L%u Hit. Loc: Set %llu, Way %u\n", ADDR, level + 1, index, way_num);
 #endif
 		*blk = CACHE[level].SET[index].BLOCK[way_num];
-		/*if (level > L1)
-			CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT = CLEAN;*/
 		if (level > L1 && CACHE[level - 1].CACHE_ATTRIBUTES.INCLUSION == EXCLUSIVE)
 		{
 			CACHE[level].SET[index].BLOCK[way_num].VALID_BIT = INVALID;
 #ifdef DBG
-			printf("Invalidation %llx : Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
+			fprintf(debug_fp, "Invalidation %llx : Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
 #endif
 			return way_num;
 		}
+		blk->DIRTY_BIT = CLEAN;
 		Rank_Maintain(level, index, way_num, HIT, rank_value);
 		return way_num;
 	}
@@ -343,9 +343,9 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 		fprintf(debug_fp, "Read %llx : Cache L%u Miss\n", ADDR, level + 1);
 #endif
 		CACHE[level].CACHE_STAT.num_read_misses++;
-		Read(level + 1, ADDR, blk, rank_value);
+		Read(level + 1, ADDR, blk, access_time + 1);
 		blk->TAG = tag;
-		if (level == L1)
+		if ((access_time == 0) || (CACHE[level - 1].CACHE_ATTRIBUTES.INCLUSION != EXCLUSIVE))
 		{
 			way_num = Cache_Replacement(level, index, *blk);
 			Rank_Maintain(level, index, way_num, MISS, rank_value);
@@ -354,20 +354,7 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 #endif
 			return way_num;
 		}
-		else
-		{
-			if (CACHE[level - 1].CACHE_ATTRIBUTES.INCLUSION != EXCLUSIVE)
-			{
-				way_num = Cache_Replacement(level, index, *blk);
-				/*CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT = CLEAN;*/
-				Rank_Maintain(level, index, way_num, MISS, rank_value);
-#ifdef DBG
-				fprintf(debug_fp, "Read %llx Miss Load: Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
-#endif
-			}
-			return way_num;
-		}
-		
+		return CACHE[level].CACHE_ATTRIBUTES.ASSOC;
 	}
 }
 
@@ -381,7 +368,9 @@ void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value
 		CACHE[NUM_LEVEL - 1].CACHE_STAT.num_blocks_transferred++;
 		return;
 	}
+	CACHE[level].CACHE_STAT.num_access++;
 	CACHE[level].CACHE_STAT.num_writes++;
+	rank_value = (REPL_POLICY == OPTIMIZATION) ? rank_value : CACHE[level].CACHE_STAT.num_access;
 	uint64_t tag, index;
 	uint32_t way_num;
 	Interpret_Address(level, ADDR, &tag, &index);
@@ -398,29 +387,15 @@ void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value
 	{
 		CACHE[level].CACHE_STAT.num_write_misses++;
 		block *blk = (block*)malloc(sizeof(block));
-		if (level == L1)
-		{
 #ifdef DBG
-			fprintf(debug_fp, "Write %llx : Cache L%u Miss\n", ADDR, level + 1);
+		fprintf(debug_fp, "Write %llx : Cache L%u Miss\n", ADDR, level + 1);
 #endif
-			way_num = Read(level, ADDR, blk, rank_value);
-			CACHE[level].CACHE_STAT.num_reads--;
-			CACHE[level].CACHE_STAT.num_read_misses--;
-			free(blk);
-			CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT = dirty_bit;
-		}
-		else
-		{
-#ifdef DBG
-			fprintf(debug_fp, "Write back %llx %s: Cache L%u Miss\n", ADDR, (dirty_bit == DIRTY) ? "DIRTY" : "CLEAN", level + 1);
-#endif
-			blk->TAG = tag;
-			blk->DIRTY_BIT = dirty_bit;
-			way_num = Cache_Replacement(level, index, *blk);
-			Rank_Maintain(level, index, way_num, MISS, rank_value);
-			if (CACHE[level].CACHE_ATTRIBUTES.INCLUSION == INCLUSIVE)
-				Write(level + 1, ADDR, dirty_bit, rank_value);
-		}
+		CACHE[level].CACHE_STAT.num_access--;
+		CACHE[level].CACHE_STAT.num_reads--;
+		CACHE[level].CACHE_STAT.num_read_misses--;
+		way_num = Read(level, ADDR, blk, 0);
+		free(blk);
+		CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT = dirty_bit;
 #ifdef DBG
 		fprintf(debug_fp, "Write %llx Miss Finish : Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
 #endif
