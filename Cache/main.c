@@ -26,9 +26,9 @@ int main(int argc, char* argv[])
 	}
 	/*
 	 *	originally design for N-level Cache
-	 *	input should be (program) <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L1_REPL_POLICY> <L1/L2_INCLUSION> <L2_SIZE> <L2_ASSOC> <L2_REPL_POLICY> <L2/L3_INCLUSION> ...<LN_REPL_POLICY> <TRACE_FILE>
+	 *	input should be (program) <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L1/L2_INCLUSION> <L2_SIZE> <L2_ASSOC> <L2/L3_INCLUSION> ...<LN_SIZE> <LN_ASSOC> <REPL_POLICY> <TRACE_FILE>
 	 *	assume <LN/MAIN_MEMORY_INCLUSION> = NON_INCLUSIVE
-	 *	NUM_LEVEL = (argc + 1 - 3) / 4;
+	 *	NUM_LEVEL = (argc + 1 - 4) / 3;
 	 */
 
 #ifdef DBG
@@ -67,6 +67,10 @@ int main(int argc, char* argv[])
 
 	Cache_Initial(size, assoc, inclusion);
 
+	free(size);
+	free(assoc);
+	free(inclusion);
+
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
 		_error_exit("fopen")
@@ -89,7 +93,7 @@ int main(int argc, char* argv[])
 		case OP_READ:
 		{
 			block *blk = (block *)malloc(sizeof(block));
-			Read(L1, ADDR, blk, 0);
+			Read(L1, ADDR, blk, rank_value);
 			free(blk);
 			break; 
 		}
@@ -104,6 +108,7 @@ int main(int argc, char* argv[])
 	fclose(trace_file_fp);
 
 	file_output();
+	stdout_output();
 
 #ifdef DBG
 	fprintf(debug_fp, "\n-----------------\n");

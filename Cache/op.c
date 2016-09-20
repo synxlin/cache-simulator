@@ -33,7 +33,7 @@ void input_check(uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 
 void file_output()
 {
-	FILE *fp = fopen("RESULT.txt", "w");
+	FILE *fp = fopen("result.txt", "w");
 	if (fp == NULL)
 		_error_exit("fopen")
 
@@ -53,7 +53,7 @@ void file_output()
 	fprintf(fp, "b. number of L1 read misses:  %llu\n", CACHE[L1].CACHE_STAT.num_read_misses);
 	fprintf(fp, "c. number of L1 writes:       %llu\n", CACHE[L1].CACHE_STAT.num_writes);
 	fprintf(fp, "d. number of L1 write misses: %llu\n", CACHE[L1].CACHE_STAT.num_write_misses);
-	double miss_rate = ((double)CACHE[L1].CACHE_STAT.num_read_misses + (double)CACHE[L1].CACHE_STAT.num_write_misses) / ((double)CACHE[L1].CACHE_STAT.num_reads + (double)CACHE[L1].CACHE_STAT.num_writes);
+	double miss_rate = ((double)CACHE[L1].CACHE_STAT.num_read_misses + (double)CACHE[L1].CACHE_STAT.num_write_misses) / ((double)CACHE[L1].CACHE_STAT.num_access);
 	fprintf(fp, "e. L1 miss rate:              %f\n", miss_rate);
 	fprintf(fp, "f. number of L1 writebacks:   %llu\n", CACHE[L1].CACHE_STAT.num_write_backs);
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_reads;
@@ -65,7 +65,7 @@ void file_output()
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
 	fprintf(fp, "j. number of L2 write misses: %llu\n", num_L2);
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
-	miss_rate = ((double)CACHE[L2].CACHE_STAT.num_read_misses + (double)CACHE[L2].CACHE_STAT.num_write_misses) / ((double)CACHE[L2].CACHE_STAT.num_reads + (double)CACHE[L2].CACHE_STAT.num_writes);
+	miss_rate = ((double)CACHE[L2].CACHE_STAT.num_read_misses + (double)CACHE[L2].CACHE_STAT.num_write_misses) / ((double)CACHE[L2].CACHE_STAT.num_access);
 	if(NUM_LEVEL == 1)
 		fprintf(fp, "k. L2 miss rate:              %d\n", 0);
 	else
@@ -75,4 +75,45 @@ void file_output()
 	fprintf(fp, "m. total memory traffic:      %llu\n", CACHE[NUM_LEVEL - 1].CACHE_STAT.num_blocks_transferred);
 
 	fclose(fp);
+}
+
+void stdout_output()
+{
+	printf("===== Simulator configuration =====\n");
+	printf("BLOCKSIZE:             %u\n", BLOCKSIZE);
+	printf("L1_SIZE:               %u\n", CACHE[L1].CACHE_ATTRIBUTES.SIZE);
+	printf("L1_ASSOC:              %u\n", CACHE[L1].CACHE_ATTRIBUTES.ASSOC);
+	uint64_t num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_ATTRIBUTES.SIZE;
+	printf("L2_SIZE:               %llu\n", num_L2);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_ATTRIBUTES.ASSOC;
+	printf("L2_ASSOC:              %llu\n", num_L2);
+	printf("REPLACEMENT POLICY:    %s\n", NAME_REPL_POLICY[REPL_POLICY]);
+	printf("INCLUSION PROPERTY:    %s\n", NAME_INCLUSION[CACHE[L1].CACHE_ATTRIBUTES.INCLUSION]);
+	printf("trace_file:            %s\n", TRACE_FILE);
+	printf("===== Simulation results (raw) =====\n");
+	printf("a. number of L1 reads:        %llu\n", CACHE[L1].CACHE_STAT.num_reads);
+	printf("b. number of L1 read misses:  %llu\n", CACHE[L1].CACHE_STAT.num_read_misses);
+	printf("c. number of L1 writes:       %llu\n", CACHE[L1].CACHE_STAT.num_writes);
+	printf("d. number of L1 write misses: %llu\n", CACHE[L1].CACHE_STAT.num_write_misses);
+	double miss_rate = ((double)CACHE[L1].CACHE_STAT.num_read_misses + (double)CACHE[L1].CACHE_STAT.num_write_misses) / ((double)CACHE[L1].CACHE_STAT.num_access);
+	printf("e. L1 miss rate:              %f\n", miss_rate);
+	printf("f. number of L1 writebacks:   %llu\n", CACHE[L1].CACHE_STAT.num_write_backs);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_reads;
+	printf("g. number of L2 reads:        %llu\n", num_L2);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_read_misses;
+	printf("h. number of L2 read misses:  %llu\n", num_L2);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_writes;
+	printf("i. number of L2 writes:       %llu\n", num_L2);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
+	printf("j. number of L2 write misses: %llu\n", num_L2);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
+	miss_rate = ((double)CACHE[L2].CACHE_STAT.num_read_misses + (double)CACHE[L2].CACHE_STAT.num_write_misses) / ((double)CACHE[L2].CACHE_STAT.num_access);
+	if(NUM_LEVEL == 1)
+		printf("k. L2 miss rate:              %d\n", 0);
+	else
+		printf("k. L2 miss rate:              %f\n", miss_rate);
+	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_backs;
+	printf("l. number of L2 writebacks:   %llu\n", num_L2);
+	printf("m. total memory traffic:      %llu\n", CACHE[NUM_LEVEL - 1].CACHE_STAT.num_blocks_transferred);
+
 }

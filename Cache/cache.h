@@ -110,7 +110,7 @@ uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk);
 
 void Invalidation(uint32_t level, uint64_t ADDR);
 
-uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint32_t access_time);
+uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value);
 
 void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value);
 

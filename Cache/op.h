@@ -17,4 +17,6 @@ void input_check(uint32_t *size, uint32_t *assoc, uint32_t *inclusion);
 
 void file_output();
 
+void stdout_output();
+
 #endif
