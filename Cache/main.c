@@ -19,17 +19,24 @@ FILE *debug_fp;
 
 int main(int argc, char* argv[])
 {
+#ifdef FLAG
+	/*
+	 *	originally design for N-level Cache
+	 *	input should be (program) <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L1/L2_INCLUSION> <L2_SIZE> <L2_ASSOC> <L2/L3_INCLUSION> ...<LN_SIZE> <LN_ASSOC> <REPL_POLICY> <TRACE_FILE>
+	 *	assume <LN/MAIN_MEMORY_INCLUSION> = NON_INCLUSIVE
+	 */
+	if ((argc + 1 - 4) % 3 != 0)
+	{
+		printf("Usage: %s <BLOCKSIZE> <L1_SIZE> <L1_ASSOC>  <L1/L2_INCLUSION>  <L2_SIZE> <L2_ASSOC> <L2/L3_INCLUSION> ... <LN_SIZE> <LN_ASSOC> <REPL_POLICY> <TRACE_FILE>\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+#else
 	if (argc != 9)
 	{
 		printf("Usage: %s <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L2_SIZE> <L2_ASSOC> <REPL_POLICY> <INCLUSION> <TRACE_FILE>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	/*
-	 *	originally design for N-level Cache
-	 *	input should be (program) <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L1/L2_INCLUSION> <L2_SIZE> <L2_ASSOC> <L2/L3_INCLUSION> ...<LN_SIZE> <LN_ASSOC> <REPL_POLICY> <TRACE_FILE>
-	 *	assume <LN/MAIN_MEMORY_INCLUSION> = NON_INCLUSIVE
-	 *	NUM_LEVEL = (argc + 1 - 4) / 3;
-	 */
+#endif
 
 #ifdef DBG
 	debug_fp = fopen("debug.txt", "w");
@@ -38,6 +45,10 @@ int main(int argc, char* argv[])
 #endif
 
 	NUM_LEVEL = ((atoi(argv[4])) == 0) ? 1 : 2;
+
+#ifdef FLAG
+	NUM_LEVEL = (argc + 1 - 4) / 3;
+#endif
 
 	uint32_t *size, *assoc, *inclusion;
 	size = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
@@ -50,17 +61,7 @@ int main(int argc, char* argv[])
 	if (inclusion == NULL)
 		_error_exit("malloc")
 
-	BLOCKSIZE = atoi(argv[1]);
-	size[L1] = atoi(argv[2]);
-	assoc[L1] = atoi(argv[3]);
-	size[L2] = atoi(argv[4]);
-	assoc[L2] = atoi(argv[5]);
-	REPL_POLICY = atoi(argv[6]);
-	inclusion[L1] = atoi(argv[7]);
-	inclusion[L2] = NON_INCLUSIVE;
-	TRACE_FILE = argv[8];
-
-	input_check(size, assoc, inclusion);
+	parse_arguments(argc, argv, size, assoc, inclusion);
 
 	if (REPL_POLICY == OPTIMIZATION)
 		OPTIMIZATION_TRACE_Initial();
@@ -106,9 +107,13 @@ int main(int argc, char* argv[])
 		}
 	}
 	fclose(trace_file_fp);
-
-	file_output();
-	stdout_output();
+	
+	FILE *fp = fopen("result.txt", "w");
+	if (fp == NULL)
+		_error_exit("fopen")
+	output(fp);
+	fclose(fp);
+	output(stdout);
 
 #ifdef DBG
 	fprintf(debug_fp, "\n-----------------\n");

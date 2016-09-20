@@ -13,10 +13,8 @@ extern char *NAME_INCLUSION[];
 
 uint32_t log_2(uint32_t num);
 
-void input_check(uint32_t *size, uint32_t *assoc, uint32_t *inclusion);
+void parse_arguments(int argc, char* argv[], uint32_t *size, uint32_t *assoc, uint32_t *inclusion);
 
-void file_output();
-
-void stdout_output();
+void output(FILE *fp);
 
 #endif
