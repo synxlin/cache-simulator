@@ -427,7 +427,6 @@ void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value
 		/* write operation */
 		CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT = dirty_bit;
 		/* maitain the rank array */
-
 		Rank_Maintain(level, index, way_num, HIT, rank_value);
 	}
 	else

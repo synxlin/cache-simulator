@@ -53,7 +53,7 @@ void file_output()
 	fprintf(fp, "b. number of L1 read misses:  %llu\n", CACHE[L1].CACHE_STAT.num_read_misses);
 	fprintf(fp, "c. number of L1 writes:       %llu\n", CACHE[L1].CACHE_STAT.num_writes);
 	fprintf(fp, "d. number of L1 write misses: %llu\n", CACHE[L1].CACHE_STAT.num_write_misses);
-	double miss_rate = ((double)CACHE[L1].CACHE_STAT.num_read_misses + (double)CACHE[L1].CACHE_STAT.num_write_misses) / ((double)CACHE[L1].CACHE_STAT.num_access);
+	double miss_rate = ((double)CACHE[L1].CACHE_STAT.num_read_misses + (double)CACHE[L1].CACHE_STAT.num_write_misses) / ((double)CACHE[L1].CACHE_STAT.num_reads + (double)CACHE[L1].CACHE_STAT.num_writes);
 	fprintf(fp, "e. L1 miss rate:              %f\n", miss_rate);
 	fprintf(fp, "f. number of L1 writebacks:   %llu\n", CACHE[L1].CACHE_STAT.num_write_backs);
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_reads;
@@ -65,7 +65,7 @@ void file_output()
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
 	fprintf(fp, "j. number of L2 write misses: %llu\n", num_L2);
 	num_L2 = (NUM_LEVEL == 1) ? 0 : CACHE[L2].CACHE_STAT.num_write_misses;
-	miss_rate = ((double)CACHE[L2].CACHE_STAT.num_read_misses + (double)CACHE[L2].CACHE_STAT.num_write_misses) / ((double)CACHE[L2].CACHE_STAT.num_access);
+	miss_rate = ((double)CACHE[L2].CACHE_STAT.num_read_misses + (double)CACHE[L2].CACHE_STAT.num_write_misses) / ((double)CACHE[L2].CACHE_STAT.num_reads + (double)CACHE[L2].CACHE_STAT.num_writes);
 	if(NUM_LEVEL == 1)
 		fprintf(fp, "k. L2 miss rate:              %d\n", 0);
 	else
