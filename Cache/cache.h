@@ -106,7 +106,9 @@ void Rank_Maintain(uint32_t level, uint64_t index, uint32_t way_num, uint8_t res
 
 uint32_t Rank_Top(uint32_t level, uint64_t index);
 
-uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk);
+uint32_t Cache_Evict(uint32_t level, uint64_t index);
+
+void Cache_Replacement(uint32_t level, uint64_t index, uint32_t way_num, block blk);
 
 void Invalidation(uint32_t level, uint64_t ADDR);
 
