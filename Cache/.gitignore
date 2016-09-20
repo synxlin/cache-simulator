@@ -42,3 +42,6 @@ VALIDATION/
 # output files
 *.txt
 sim_cache
+
+# useless file
+*.fuse*
