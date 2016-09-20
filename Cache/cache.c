@@ -250,7 +250,7 @@ uint32_t Cache_Replacement(uint32_t level, uint64_t index, block blk)
 			Write(level + 1, ADDR, DIRTY, CACHE[level].SET[index].RANK[way_num]);
 		}
 		else
-		{
+		{                                                                                        
 			/* if this level and next level are exlusive relationship */
 			/* any block evicted need to be written back */
 			if (CACHE[level].CACHE_ATTRIBUTES.INCLUSION == EXCLUSIVE)
@@ -427,6 +427,7 @@ void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value
 		/* write operation */
 		CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT = dirty_bit;
 		/* maitain the rank array */
+
 		Rank_Maintain(level, index, way_num, HIT, rank_value);
 	}
 	else
