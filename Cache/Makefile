@@ -6,15 +6,15 @@ OBJS = $(SRCS:.c=.o)
 CLEANFILES = $(PROG) $(OBJS)
 
 # input parameter
-# for debug, input $make FLAG="-D DBG"
+# for debug, input $make FLAG="-g -D DBG"
 # for complete function, input $make FLAG="-D FLAG"
 FLAG = 
 
 # Compiler options
 CC = gcc
 OPTIMIZER = -O3
-CFLAGS = -Wall -g -c $(FLAG) $(OPTIMIZER)
-LFLAGS = -Wall -g $(FLAG) $(OPTIMIZER)
+CFLAGS = -Wall -c $(FLAG) $(OPTIMIZER)
+LFLAGS = -Wall $(FLAG) $(OPTIMIZER)
 
 # default rule
 all: $(PROG)

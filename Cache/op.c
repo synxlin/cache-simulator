@@ -18,8 +18,8 @@ uint32_t log_2(uint32_t num)
 void parse_arguments(int argc, char* argv[], uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 {
 	uint32_t i;
-	BLOCKSIZE = atoi(argv[1]);
 #ifdef FLAG
+	BLOCKSIZE = atoi(argv[1]);
 	for (i = 0; i < NUM_LEVEL; i++)
 	{
 		size[i] = atoi(argv[2 + i * 3]);
@@ -30,7 +30,9 @@ void parse_arguments(int argc, char* argv[], uint32_t *size, uint32_t *assoc, ui
 			inclusion[i] = NON_INCLUSIVE;
 	}
 	REPL_POLICY = atoi(argv[argc - 2]);
+	TRACE_FILE = argv[argc - 1];
 #else
+	BLOCKSIZE = atoi(argv[1]);
 	size[L1] = atoi(argv[2]);
 	assoc[L1] = atoi(argv[3]);
 	inclusion[L1] = atoi(argv[7]);
@@ -41,8 +43,8 @@ void parse_arguments(int argc, char* argv[], uint32_t *size, uint32_t *assoc, ui
 		inclusion[L2] = NON_INCLUSIVE;
 	}
 	REPL_POLICY = atoi(argv[6]);
+	TRACE_FILE = argv[8];
 #endif
-	TRACE_FILE = argv[argc - 1];
 	/* input check */
 	if(REPL_POLICY < LRU || REPL_POLICY > OPTIMIZATION)
 			_input_error_exit("error: wrong replacement policy\n")
@@ -106,7 +108,7 @@ void output(FILE *fp)
 	fprintf(fp, "a. number of L1 reads:        %llu\n", CACHE[L1].CACHE_STAT.num_reads);
 	fprintf(fp, "b. number of L1 read misses:  %llu\n", CACHE[L1].CACHE_STAT.num_read_misses);
 	fprintf(fp, "c. number of L1 writes:       %llu\n", CACHE[L1].CACHE_STAT.num_writes);
-	fprintf(fp, "d. number of L1 write misses:%llu\n", CACHE[L1].CACHE_STAT.num_write_misses);
+	fprintf(fp, "d. number of L1 write misses: %llu\n", CACHE[L1].CACHE_STAT.num_write_misses);
 	double miss_rate = ((double)CACHE[L1].CACHE_STAT.num_read_misses + (double)CACHE[L1].CACHE_STAT.num_write_misses) / ((double)CACHE[L1].CACHE_STAT.num_reads + (double)CACHE[L1].CACHE_STAT.num_writes);
 	fprintf(fp, "e. L1 miss rate:              %f\n", miss_rate);
 	fprintf(fp, "f. number of L1 writebacks:   %llu\n", CACHE[L1].CACHE_STAT.num_write_backs);

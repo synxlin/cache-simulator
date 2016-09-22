@@ -107,12 +107,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	fclose(trace_file_fp);
-	
-	FILE *fp = fopen("result.txt", "w");
-	if (fp == NULL)
-		_error_exit("fopen")
-	output(fp);
-	fclose(fp);
+
 	output(stdout);
 
 #ifdef DBG
