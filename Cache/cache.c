@@ -6,6 +6,9 @@
 #include "op.h"
 #include "rbtree.h"
 
+/*
+ *	Inital the cache
+ */
 void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 {
 	uint32_t j;
@@ -17,6 +20,7 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 	{
 		if (size[j] == 0)
 			break;
+		/* first, initial the attributes of cache */
 		CACHE[j].CACHE_ATTRIBUTES.SIZE = size[j];
 		CACHE[j].CACHE_ATTRIBUTES.ASSOC = assoc[j];
 		CACHE[j].CACHE_ATTRIBUTES.INCLUSION = inclusion[j];
@@ -25,6 +29,7 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 		CACHE[j].CACHE_ATTRIBUTES.INDEX_WIDTH = log_2(CACHE[j].CACHE_ATTRIBUTES.SET_NUM);
 		CACHE[j].CACHE_ATTRIBUTES.TAG_WIDTH = 64 - CACHE[j].CACHE_ATTRIBUTES.INDEX_WIDTH - BLOCK_OFFSET_WIDTH;
 
+		/* then, allocate space for sets (including blocks and tag array) */
 		CACHE[j].SET = (set *)malloc(sizeof(set) * CACHE[j].CACHE_ATTRIBUTES.SET_NUM);
 		if (CACHE[j].SET == NULL)
 			_error_exit("malloc")
@@ -40,10 +45,14 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 				_error_exit("malloc")
 			memset(CACHE[j].SET[i].RANK, 0, sizeof(uint64_t) * CACHE[j].CACHE_ATTRIBUTES.ASSOC);
 		}
+		/* initial the statistics information of cache */
 		memset(&(CACHE[j].CACHE_STAT), 0, sizeof(cache_stat));
 	}
 }
 
+/*
+ * Inital the rank value array for optimal replacement policy
+ */
 void OPTIMIZATION_TRACE_Initial()
 {
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
@@ -53,6 +62,7 @@ void OPTIMIZATION_TRACE_Initial()
 	uint64_t *trace = (uint64_t *)malloc(sizeof(uint64_t) * trace_len);
 	if (trace == NULL)
 		_error_exit("malloc")
+	/* read tracefile, record the address in array "trace" in order */
 	while (1)
 	{
 		int result;
@@ -77,21 +87,29 @@ void OPTIMIZATION_TRACE_Initial()
 	if (OPTIMIZATION_TRACE == NULL)
 		_error_exit("malloc")
 
+	/* we use red black tree to help organize the trace */
 	_rb_tree_ptr T = (_rb_tree_ptr)malloc(sizeof(struct _rb_tree));
 	if (T == NULL)
 		_error_exit("malloc")
 	T->_root = NULL;
 	uint64_t j;
+	/* we need to read operation address sequence in reverse order */
 	for (j = 0; j < i; j++)
 	{
 		_rb_tree_node_ptr _result = _rb_tree_find(T, trace[i - j - 1]);
 		if (_result == NULL)
 		{
+			/* if this address never show up before */
+			/* this access time is the last access time of this address */
+			/* keep the rank value as infinity */
+			/* here rank value use total trace entries number + 1 */
 			_rb_tree_insert(T, trace[i - j - 1], i - j - 1);
 			OPTIMIZATION_TRACE[i - j - 1] = i + 1;
 		}
 		else
 		{
+			/* if this address has shown up before */
+			/* the difference between two access time is its rank value */
 			OPTIMIZATION_TRACE[i - j - 1] = _result->value - (i - j - 1);
 			_result->value = i - j - 1;
 		}
@@ -106,6 +124,9 @@ void OPTIMIZATION_TRACE_Initial()
 	_rb_tree_clear(T);
 }
 
+/*
+ *	Interpreter the address into tag, index
+ */
 void Interpret_Address(uint32_t level, uint64_t ADDR, uint64_t *tag, uint64_t *index)
 {
 	uint32_t tag_width = CACHE[level].CACHE_ATTRIBUTES.TAG_WIDTH;
@@ -113,6 +134,9 @@ void Interpret_Address(uint32_t level, uint64_t ADDR, uint64_t *tag, uint64_t *i
 	*index = (ADDR << tag_width) >> (tag_width + BLOCK_OFFSET_WIDTH);
 }
 
+/*
+ *	Rebuild address from tag and index
+ */
 uint64_t Rebuild_Address(uint32_t level, uint64_t tag, uint64_t index)
 {
 	uint64_t ADDR = 0;
@@ -121,6 +145,11 @@ uint64_t Rebuild_Address(uint32_t level, uint64_t tag, uint64_t index)
 	return ADDR;
 }
 
+/*
+ *	Search the cache of level "level"
+ *	return the result: HIT or MISS
+ *	if HIT, the hit way number will return by input parameter pointer "*way_num"
+ */
 uint8_t Cache_Search(uint32_t level, uint64_t tag, uint64_t index, uint32_t *way_num)
 {
 	uint32_t i, k = CACHE[level].CACHE_ATTRIBUTES.ASSOC;
@@ -139,12 +168,16 @@ uint8_t Cache_Search(uint32_t level, uint64_t tag, uint64_t index, uint32_t *way
 	}
 }
 
+/*
+ *	Maintain the rank array
+ */
 void Rank_Maintain(uint32_t level, uint64_t index, uint32_t way_num, uint8_t result, uint64_t rank_value)
 {
 	uint64_t *rank = CACHE[level].SET[index].RANK;
 	switch (REPL_POLICY)
 	{
 	case FIFO:
+		/* FIFO: only update when the data is allocated */
 		if (result == MISS)
 			rank[way_num] = rank_value;
 		break; 
@@ -180,6 +213,9 @@ void Rank_Maintain(uint32_t level, uint64_t index, uint32_t way_num, uint8_t res
 #endif
 }
 
+/*
+ *	Return the way number to be placed or replaced
+ */
 uint32_t Rank_Top(uint32_t level, uint64_t index)
 {
 	uint32_t i, assoc = CACHE[level].CACHE_ATTRIBUTES.ASSOC;
@@ -221,6 +257,10 @@ uint32_t Rank_Top(uint32_t level, uint64_t index)
 	}
 }
 
+/*
+ *	Evict one block from cache "level" set "index"
+ *	to make space for the block to be allocated in
+ */
 uint32_t Cache_Evict(uint32_t level, uint64_t index)
 {
 	uint32_t way_num = Rank_Top(level, index);
@@ -263,7 +303,9 @@ uint32_t Cache_Evict(uint32_t level, uint64_t index)
 	return way_num;
 }
 
-
+/*
+ *	Allocate (Place or Replace) block "blk" on cache "level", set "index", way "way_num"
+ */
 void Cache_Replacement(uint32_t level, uint64_t index, uint32_t way_num, block blk)
 {
 	CACHE[level].SET[index].BLOCK[way_num].VALID_BIT = VALID;
@@ -274,6 +316,9 @@ void Cache_Replacement(uint32_t level, uint64_t index, uint32_t way_num, block b
 #endif
 }
 
+/*
+ *	Send invalidation signal to cache "level" to invalid block with address "ADDR"
+ */
 void Invalidation(uint32_t level, uint64_t ADDR)
 {
 	/* store the cache level where invalidation signal comes from */
@@ -296,6 +341,7 @@ void Invalidation(uint32_t level, uint64_t ADDR)
 	#ifdef DBG
 				fprintf(debug_fp, "Invalidation %llx : Cache L%u Set %llu, Way %u\n\n", ADDR, level + 1, index, way_num);
 	#endif
+				/* if it is dirty, it need to be written back to the cache where signal comes from*/
 				if (CACHE[level].SET[index].BLOCK[way_num].DIRTY_BIT == DIRTY)
 					Write(level_invalidation_signal_from, ADDR, DIRTY, CACHE[level].SET[index].RANK[way_num]);
 			}
@@ -313,6 +359,10 @@ void Invalidation(uint32_t level, uint64_t ADDR)
 	}
 }
 
+/*
+ *	read operation
+ *	block content is sent back by input parameter "*blk"
+ */
 uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 {
 	if (level >= NUM_LEVEL)
@@ -401,6 +451,9 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 	return way_num;
 }
 
+/*
+ *	write operation
+ */
 void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value)
 {
 	if (level >= NUM_LEVEL)
@@ -468,6 +521,9 @@ void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value
 	}
 }
 
+/*
+ * free space allocated for cache
+ */
 void Cache_free()
 {
 	uint32_t i;

@@ -7,6 +7,10 @@
 char *NAME_REPL_POLICY[] = { "LRU","FIFO","Pseudo","Optimization" };
 char *NAME_INCLUSION[] = { "non-inclusive", "inclusive", "exclusive" };
 
+/*
+ *	improved log2 function
+ *	log2(0) = 0
+ */
 uint32_t log_2(uint32_t num)
 {
 	uint32_t result = 0, tmp = num;
@@ -15,6 +19,9 @@ uint32_t log_2(uint32_t num)
 	return result;
 }
 
+/*
+ *	parse arguments and check inputs
+ */
 void parse_arguments(int argc, char* argv[], uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 {
 	uint32_t i;
@@ -65,6 +72,9 @@ void parse_arguments(int argc, char* argv[], uint32_t *size, uint32_t *assoc, ui
 		_input_error_exit("error: wrong inclusion\n")
 }
 
+/*
+ *	output cache statistic results to file or stdout
+ */
 void output(FILE *fp)
 {
 #ifdef FLAG

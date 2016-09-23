@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
 	NUM_LEVEL = (argc + 1 - 4) / 3;
 #endif
 
+	/* initial to parse arugments */
 	uint32_t *size, *assoc, *inclusion;
 	size = (uint32_t *)malloc(sizeof(uint32_t) * NUM_LEVEL);
 	if (size == NULL)
@@ -63,15 +64,19 @@ int main(int argc, char* argv[])
 
 	parse_arguments(argc, argv, size, assoc, inclusion);
 
+	/* if it is optimal replace policy */
+	/* we need to pre read the trace file to inital rank array */
 	if (REPL_POLICY == OPTIMIZATION)
 		OPTIMIZATION_TRACE_Initial();
 
+	/* inital the cache */
 	Cache_Initial(size, assoc, inclusion);
 
 	free(size);
 	free(assoc);
 	free(inclusion);
 
+	/* open trace file to read */
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
 		_error_exit("fopen")
@@ -88,6 +93,7 @@ int main(int argc, char* argv[])
 		trace_count++;
 		uint64_t rank_value = (REPL_POLICY == OPTIMIZATION) ? OPTIMIZATION_TRACE[trace_count - 1] : trace_count;
 		if (result == EOF)
+			/* if we reach the end of trace file*/
 			break;
 		switch (OP)
 		{
@@ -107,7 +113,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	fclose(trace_file_fp);
-
+	/* output the statistic result */
 	output(stdout);
 
 #ifdef DBG

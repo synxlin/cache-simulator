@@ -2,8 +2,6 @@
 #ifndef CACHE_H_
 #define CACHE_H_
 
-//#define DBG
-
 #define L1 0
 #define L2 1
 
@@ -53,9 +51,7 @@ typedef struct cache_stat
 	uint64_t num_access;
 	uint64_t num_reads;
 	uint64_t num_writes;
-	/*uint64_t num_read_hits;*/
 	uint64_t num_read_misses;
-	/*uint64_t num_write_hits;*/
 	uint64_t num_write_misses;
 	uint64_t num_write_backs;
 	uint64_t num_blocks_transferred;

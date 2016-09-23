@@ -4,6 +4,9 @@
 #include "op.h"
 #include "rbtree.h"
 
+/*
+ *	left rotate operation of tree T at node _x
+ */
 void _left_rotate(_rb_tree_ptr T, _rb_tree_node_ptr _x)
 {
 	_rb_tree_node_ptr _y = _x->_right;
@@ -26,6 +29,9 @@ void _left_rotate(_rb_tree_ptr T, _rb_tree_node_ptr _x)
 	_x->_parent = _y;
 }
 
+/*
+ *	right rotate operation of tree T at node _x
+ */
 void _right_rotate(_rb_tree_ptr T, _rb_tree_node_ptr _x)
 {
 	_rb_tree_node_ptr _y = _x->_left;
@@ -48,6 +54,9 @@ void _right_rotate(_rb_tree_ptr T, _rb_tree_node_ptr _x)
 	_x->_parent = _y;
 }
 
+/*
+ * fix red black tree when insert a node into tree
+ */
 void _rb_tree_insert_fix(_rb_tree_ptr T, _rb_tree_node_ptr _x)
 {
 	while (_x != T->_root && _x->_parent->_color == _red)
@@ -100,6 +109,9 @@ void _rb_tree_insert_fix(_rb_tree_ptr T, _rb_tree_node_ptr _x)
 	T->_root->_color = _black;
 }
 
+/*
+ *	insert a node into the tree
+ */
 int _rb_tree_insert(_rb_tree_ptr T, uint64_t key, uint64_t value)
 {
 	_rb_tree_node_ptr _y = NULL;
@@ -139,6 +151,9 @@ int _rb_tree_insert(_rb_tree_ptr T, uint64_t key, uint64_t value)
 	return 0;
 }
 
+/*
+ *	find a value in tree T
+ */
 _rb_tree_node_ptr _rb_tree_find(_rb_tree_ptr T, uint64_t key)
 {
 	_rb_tree_node_ptr _y = NULL;
@@ -158,6 +173,9 @@ _rb_tree_node_ptr _rb_tree_find(_rb_tree_ptr T, uint64_t key)
 	return _y;
 }
 
+/*
+ *	free the space allocated for tree node
+ */
 void _rb_tree_node_clear(_rb_tree_node_ptr T)
 {
 	if (T == NULL)
@@ -167,6 +185,9 @@ void _rb_tree_node_clear(_rb_tree_node_ptr T)
 	free(T);
 }
 
+/*
+ *	free the space allocated for tree
+ */
 void _rb_tree_clear(_rb_tree_ptr T)
 {
 	_rb_tree_node_clear(T->_root);
