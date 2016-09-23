@@ -45,3 +45,5 @@ sim_cache
 
 # useless file
 *.fuse*
+
+*.pdf
