@@ -138,4 +138,5 @@ int main(int argc, char* argv[])
 	if (REPL_POLICY == OPTIMIZATION)
 		free(OPTIMIZATION_TRACE);
 	Cache_free();
+	return 0;
 }
