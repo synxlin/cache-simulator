@@ -8,7 +8,7 @@
 #define LRU 0
 #define FIFO 1
 #define PLRU 2
-#define OPTIMIZATION 3
+#define OPTIMAL 3
 
 #define NON_INCLUSIVE 0
 #define INCLUSIVE 1
@@ -82,7 +82,7 @@ extern uint32_t BLOCKSIZE, REPL_POLICY, BLOCK_OFFSET_WIDTH;
 
 extern char* TRACE_FILE;
 extern uint64_t trace_count;
-extern uint64_t *OPTIMIZATION_TRACE;
+extern uint64_t *OPTIMAL_TRACE;
 
 #ifdef DBG
 extern FILE *debug_fp;
@@ -90,7 +90,7 @@ extern FILE *debug_fp;
 
 void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *inclusion);
 
-void OPTIMIZATION_TRACE_Initial();
+void OPTIMAL_TRACE_Initial();
 
 void Interpret_Address(uint32_t level, uint64_t ADDR, uint64_t *tag, uint64_t *index);
 

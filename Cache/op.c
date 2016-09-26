@@ -4,7 +4,7 @@
 #include "op.h"
 #include "rbtree.h"
 
-char *NAME_REPL_POLICY[] = { "LRU","FIFO","Pseudo","Optimization" };
+char *NAME_REPL_POLICY[] = { "LRU","FIFO","Pseudo","Optimal" };
 char *NAME_INCLUSION[] = { "non-inclusive", "inclusive", "exclusive" };
 
 /*
@@ -53,7 +53,7 @@ void parse_arguments(int argc, char* argv[], uint32_t *size, uint32_t *assoc, ui
 	TRACE_FILE = argv[8];
 #endif
 	/* input check */
-	if(REPL_POLICY < LRU || REPL_POLICY > OPTIMIZATION)
+	if(REPL_POLICY < LRU || REPL_POLICY > OPTIMAL)
 			_input_error_exit("error: wrong replacement policy\n")
 	for (i = 0; i < NUM_LEVEL; i++)
 	{

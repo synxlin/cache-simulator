@@ -53,7 +53,7 @@ void Cache_Initial(uint32_t *size, uint32_t *assoc, uint32_t *inclusion)
 /*
  * Inital the rank value array for optimal replacement policy
  */
-void OPTIMIZATION_TRACE_Initial()
+void OPTIMAL_TRACE_Initial()
 {
 	FILE *trace_file_fp = fopen(TRACE_FILE, "r");
 	if (trace_file_fp == NULL)
@@ -74,7 +74,7 @@ void OPTIMIZATION_TRACE_Initial()
 		if (i > trace_len)
 		{
 			trace_len *= 2;
-			trace = (uint64_t *)realloc(OPTIMIZATION_TRACE, sizeof(uint64_t) * trace_len);
+			trace = (uint64_t *)realloc(OPTIMAL_TRACE, sizeof(uint64_t) * trace_len);
 			if (trace == NULL)
 				_error_exit("realloc")
 		}
@@ -83,8 +83,8 @@ void OPTIMIZATION_TRACE_Initial()
 	}
 	fclose(trace_file_fp);
 
-	OPTIMIZATION_TRACE = (uint64_t *)malloc(sizeof(uint64_t) * i);
-	if (OPTIMIZATION_TRACE == NULL)
+	OPTIMAL_TRACE = (uint64_t *)malloc(sizeof(uint64_t) * i);
+	if (OPTIMAL_TRACE == NULL)
 		_error_exit("malloc")
 
 	/* we use red black tree to help organize the trace */
@@ -104,17 +104,17 @@ void OPTIMIZATION_TRACE_Initial()
 			/* keep the rank value as infinity */
 			/* here rank value use total trace entries number + 1 */
 			_rb_tree_insert(T, trace[i - j - 1], i - j - 1);
-			OPTIMIZATION_TRACE[i - j - 1] = i + 1;
+			OPTIMAL_TRACE[i - j - 1] = i + 1;
 		}
 		else
 		{
 			/* if this address has shown up before */
 			/* the difference between two access time is its rank value */
-			OPTIMIZATION_TRACE[i - j - 1] = _result->value - (i - j - 1);
+			OPTIMAL_TRACE[i - j - 1] = _result->value - (i - j - 1);
 			_result->value = i - j - 1;
 		}
 #ifdef DBG
-		fprintf(debug_fp, "%llu ", OPTIMIZATION_TRACE[i - j - 1]);
+		fprintf(debug_fp, "%llu ", OPTIMAL_TRACE[i - j - 1]);
 #endif
 	}
 #ifdef DBG
@@ -238,7 +238,7 @@ uint32_t Rank_Top(uint32_t level, uint64_t index)
 		i = i - (assoc - 1);
 		return i;
 	}
-	case OPTIMIZATION:
+	case OPTIMAL:
 	{
 		uint32_t k = 0;
 		for (i = 0; i < assoc; i++)
@@ -379,9 +379,9 @@ uint32_t Read(uint32_t level, uint64_t ADDR, block *blk, uint64_t rank_value)
 	CACHE[level].CACHE_STAT.num_access++;
 	CACHE[level].CACHE_STAT.num_reads++;
 
-	/* if we use Optimization Replacement Policy, the rank value should be passed down to every level */
+	/* if we use Optimal Replacement Policy, the rank value should be passed down to every level */
 	/* otherwise, rank_value should be the access time of this specif level cache */
-	rank_value = (REPL_POLICY == OPTIMIZATION) ? rank_value : CACHE[level].CACHE_STAT.num_access;
+	rank_value = (REPL_POLICY == OPTIMAL) ? rank_value : CACHE[level].CACHE_STAT.num_access;
 
 	/* search this level cache */
 	uint64_t tag, index;
@@ -468,9 +468,9 @@ void Write(uint32_t level, uint64_t ADDR, uint8_t dirty_bit, uint64_t rank_value
 	CACHE[level].CACHE_STAT.num_access++;
 	CACHE[level].CACHE_STAT.num_writes++;
 
-	/* if we use Optimization Replacement Policy, the rank value should be passed down to every level */
+	/* if we use Optimal Replacement Policy, the rank value should be passed down to every level */
 	/* otherwise, rank_value should be the access time of this specif level cache */
-	rank_value = (REPL_POLICY == OPTIMIZATION) ? rank_value : CACHE[level].CACHE_STAT.num_access;
+	rank_value = (REPL_POLICY == OPTIMAL) ? rank_value : CACHE[level].CACHE_STAT.num_access;
 	/* search this level cache */
 	uint64_t tag, index;
 	uint32_t way_num;

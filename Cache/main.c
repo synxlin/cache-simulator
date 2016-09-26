@@ -11,7 +11,7 @@ uint64_t trace_count;
 
 cache *CACHE;
 
-uint64_t *OPTIMIZATION_TRACE;
+uint64_t *OPTIMAL_TRACE;
 
 #ifdef DBG
 FILE *debug_fp;
@@ -66,8 +66,8 @@ int main(int argc, char* argv[])
 
 	/* if it is optimal replace policy */
 	/* we need to pre read the trace file to inital rank array */
-	if (REPL_POLICY == OPTIMIZATION)
-		OPTIMIZATION_TRACE_Initial();
+	if (REPL_POLICY == OPTIMAL)
+		OPTIMAL_TRACE_Initial();
 
 	/* inital the cache */
 	Cache_Initial(size, assoc, inclusion);
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 		uint64_t ADDR;
 		result = fscanf(trace_file_fp, "%c %llx%c", &OP, &ADDR, &line);
 		trace_count++;
-		uint64_t rank_value = (REPL_POLICY == OPTIMIZATION) ? OPTIMIZATION_TRACE[trace_count - 1] : trace_count;
+		uint64_t rank_value = (REPL_POLICY == OPTIMAL) ? OPTIMAL_TRACE[trace_count - 1] : trace_count;
 		if (result == EOF)
 			/* if we reach the end of trace file*/
 			break;
@@ -135,8 +135,8 @@ int main(int argc, char* argv[])
 	fclose(debug_fp);
 #endif
 
-	if (REPL_POLICY == OPTIMIZATION)
-		free(OPTIMIZATION_TRACE);
+	if (REPL_POLICY == OPTIMAL)
+		free(OPTIMAL_TRACE);
 	Cache_free();
 	return 0;
 }
