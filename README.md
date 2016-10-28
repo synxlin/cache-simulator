@@ -2,6 +2,8 @@
 
 ## Introduction 
 
+This is a cache gierarchy simulator.
+
 ## Usage
 
 Using the command shown as follows.
@@ -77,9 +79,9 @@ m. Total memory traffic (or the number of blocks transferred to/from memory)
 
 The simulator reads in a trace file in the following format:
 
-r|w <hex address>
+r|w hex address
 
-r|w <hex address>
+r|w hex address
 
 ...
 
