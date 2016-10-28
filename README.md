@@ -4,6 +4,8 @@
 
 This is a cache gierarchy simulator.
 
+**NOTE**: optimal replacement implement has bugs.
+
 ## Usage
 
 Using the command shown as follows.
