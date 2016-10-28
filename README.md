@@ -35,45 +35,45 @@ To run the program,
 
 2. The following measurements: 
 
-a. Number of L1 reads
+	a. Number of L1 reads
 
-b. Number of L1 read misses
+	b. Number of L1 read misses
 
-c. Number of L1 writes
+	c. Number of L1 writes
 
-d. Number of L1 write misses
+	d. Number of L1 write misses
 
-e. L1 miss rate
+	e. L1 miss rate
 
-	= (L1 read misses + L1 write misses)/(L1 reads + L1 writes) 
+		= (L1 read misses + L1 write misses)/(L1 reads + L1 writes) 
 
-f. Number of writebacks from L1
+	f. Number of writebacks from L1
 
-	dirty evictions from the L1 (with an Exclusive L2, clean L1 evictions are also written to L2 but don’t count those here)
+		dirty evictions from the L1 (with an Exclusive L2, clean L1 evictions are also written to L2 but don’t count those here)
 
-g. Number of L2 reads
+	g. Number of L2 reads
 
-	= L1 read misses + L1 write misses
+		= L1 read misses + L1 write misses
 
-h. Number of L2 read misses
+	h. Number of L2 read misses
 
-i. Number of L2 writes
+	i. Number of L2 writes
 
-	= writebacks from L1, in case of an Inclusive or Non‐inclusive L2
+		= writebacks from L1, in case of an Inclusive or Non‐inclusive L2
 
-	= writebacks from L1 + clean L1 evictions, in case of an Exclusive L2
+		= writebacks from L1 + clean L1 evictions, in case of an Exclusive L2
 
-j. Number of L2 write misses
+	j. Number of L2 write misses
 
-k. L2 miss rate
+	k. L2 miss rate
 
-	= (L2 read misses + L2 write misses)/(L2 reads + L2 writes)
+		= (L2 read misses + L2 write misses)/(L2 reads + L2 writes)
 
-l. Number of writebacks from L2 to memory
+	l. Number of writebacks from L2 to memory
 
-m. Total memory traffic (or the number of blocks transferred to/from memory)
+	m. Total memory traffic (or the number of blocks transferred to/from memory)
 
-	Assuming the presence of an L2, this should match L2 read misses + L2 write misses + writebacks from L2 to memory, in case of a Non‐inclusive or Exclusive L2 cache. In case of an Inclusive L2, if the blocks evicted from the L1 as a result of the back invalidation happen to be dirty, those should also be taken into account as writes to the memory (since they hold more recent data than what the memory contains).  
+		Assuming the presence of an L2, this should match L2 read misses + L2 write misses + writebacks from L2 to memory, in case of a Non‐inclusive or Exclusive L2 cache. In case of an Inclusive L2, if the blocks evicted from the L1 as a result of the back invalidation happen to be dirty, those should also be taken into account as writes to the memory (since they hold more recent data than what the memory contains).  
 
 ### Trace File
 
