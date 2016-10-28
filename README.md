@@ -14,7 +14,7 @@ To complie the program,
 
 To run the program,
 
->sim_cache <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L2_SIZE> <L2_ASSOC> <REPL_POLICY> <INCLUSION> <TRACE_FILE> 
+>sim_cache < BLOCKSIZE \> < L1_SIZE \> < L1_ASSOC \> < L2_SIZE \> < L2_ASSOC \> < REPL_POLICY \> < INCLUSION \> < TRACE_FILE \> 
 
 ### Input
 
