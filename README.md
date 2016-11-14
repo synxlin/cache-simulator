@@ -28,7 +28,7 @@ To run the program,
 |	L2_SIZE:    	|Positive int. L2 cache size in bytes; 0 signifies that there is no L2 cache	|
 |	L2_ASSOC:    	|Positive int. L2 set‐associativity (1 is direct‐mapped)						|
 |	REPL_POLICY:  	|Positive int. 0 for LRU, 1 for FIFO, 2 for pseudoLRU, 3 for optimal			|
-|	INCLUSION:  	|Positive int. 0 for non‐inclusive, 1 for inclusive and 2 for exclusive			|
+|	INCLUSION:  	|Positive int. 0 for non‐inclusive, 1 for inclusive and 2 for exclusive		|
 |	TRACE_FILE:  	|Character string. Full name of trace file including any extensions				|
 
 ### Output
