@@ -1,8 +1,8 @@
-# Project 1 - Cache Hierarchy Simulator
+# Cache Hierarchy Simulator
 
 ## Introduction 
 
-This is a cache gierarchy simulator.
+This is a cache hierarchy simulator.
 
 **NOTE**: optimal replacement implement has bugs.
 
