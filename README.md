@@ -1,4 +1,7 @@
-# Cache Hierarchy Simulator
+Cache Hierarchy Simulator
+=========================
+
+(Latest update: 2016/11/30)
 
 ## Introduction 
 
